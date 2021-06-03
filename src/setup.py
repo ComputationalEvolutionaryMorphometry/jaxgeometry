@@ -28,6 +28,7 @@ import jax.numpy as jnp
 from jax import lax
 from jax import grad, jacfwd, jacrev, jit, vmap, partial
 from jax import random
+from jax.scipy import optimize
 
 from src.utils import *
 
