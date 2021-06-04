@@ -68,11 +68,45 @@ def initialize(M):
     
     M.mpp = jit(lambda gammaphivchi,lambd,dts: integrate(ode_mpp,chart_update_mpp,dts,gammaphivchi[0],gammaphivchi[1],lambd))
     
-    def MPPt(u,lambd,v,chi,T=T,n_steps=n_steps):
+    def MPP_forwardt(u,lambd,v,chi,T=T,n_steps=n_steps):
         curve = M.mpp((jnp.hstack((u[0],v,chi.flatten())),u[1]),jnp.tile(lambd,(n_steps,1)),dts(T,n_steps))
         us = curve[1][:,0:M.dim+M.dim**2]
         vs = curve[1][:,M.dim+M.dim**2:2*M.dim+M.dim**2]
         chis = curve[1][:,2*M.dim+M.dim**2:].reshape((-1,M.dim,M.dim))
         charts = curve[2]
         return(us,vs,chis,charts)
-    M.MPPt = MPPt
+    M.MPP_forwardt = MPP_forwardt
+
+    # optimization
+    # objective
+    def f(vchi,u,lambd,y):
+        v = vchi[0:M.dim]
+        chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
+        xs,_,chis,charts = M.MPP_forwardt(u,lambd,v,chi)
+        xT = xs[-1][0:M.dim]; chartT = charts[-1]; chiT = chis[-1]
+        y_chartT = M.update_coords(y,chartT)
+        return (1./M.dim)*jnp.sum(jnp.square(xT-y_chartT[0]))+(1./M.dim**2)*jnp.sum(jnp.square(chiT))
+    # constraint
+    def c(vchi,u,lambd):
+        v = vchi[0:M.dim]
+        chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
+        xs,_,chis,charts = M.MPP_forwardt(u,lambd,v,chi)
+        chiT = chis[-1]
+        return 1e-8-(1./M.dim**2)*jnp.sum(jnp.square(chiT))
+    
+    def MPP(u,lambd,y):
+        res = scipy.optimize.minimize(f,jnp.zeros(M.dim+M.dim**2),args=(u,lambd,y),method='BFGS',options={'disp': False, 'eps': 1e-5, 'maxiter': 100})
+        # print(res)
+        res = scipy.optimize.minimize(f,
+                        res.x,
+                        args=(u,lambd,y),
+                        method='COBYLA',
+                        constraints={'type':'ineq','fun':c, 'args': (u,lambd)},
+                        )
+        # print(res)
+        vchi = res.x
+        
+        v = vchi[0:M.dim]
+        chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
+        return (v,chi)
+    M.MPP = MPP
