@@ -41,7 +41,7 @@ def initialize(M):
         dv= .5*jnp.einsum('l,jikl,ij,k->l',lambd**2,lax.stop_gradient(M.R((gamma,chart))),chi,v)
         lambd2 = lambd**2; lambdm2 = lambd**(-2)
         dchi = jnp.einsum('ji,ij,i,j->ij',lambd2.reshape((2,1))-lambd2.reshape((1,2)),.5*jnp.outer(lambdm2,lambdm2),v,v)
-        dgammaphi = jnp.dot(lax.stop_gradient(M.Horizontal((gammaphi,chart))),dv)
+        dgammaphi = jnp.dot(lax.stop_gradient(M.Horizontal((gammaphi,chart))),v)
     
         return jnp.hstack((dgammaphi.flatten(),dv,dchi.flatten()))
     
