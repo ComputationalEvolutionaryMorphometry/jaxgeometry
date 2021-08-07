@@ -91,9 +91,6 @@ class Ellipsoid(EmbeddedManifold):
 
         EmbeddedManifold.__init__(self,F,2,3,invF=invF)
 
-        # metric matrix
-        self.g = lambda x: jnp.dot(self.JF(x).T,self.JF(x))
-
         # action of matrix group on elements
         self.act = lambda g,x: jnp.tensordot(g,x,(1,0))
         self.acts = lambda g,x: jnp.tensordot(g,x,(2,0))

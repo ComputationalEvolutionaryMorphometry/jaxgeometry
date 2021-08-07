@@ -31,6 +31,8 @@ def initialize(M):
     
     Returns:
         4-tensor R_ijk^l in with order i,j,k,l
+        (see e.g. https://en.wikipedia.org/wiki/List_of_formulas_in_Riemannian_geometry#(3,1)_Riemann_curvature_tensor )
+        Note that sign convention is different compared to e.g. Lee, Riemannian Manifolds.
     """
     M.R = jit(lambda x: jnp.einsum('pik,ljp->ijkl',M.Gamma_g(x),M.Gamma_g(x))
                 -jnp.einsum('pjk,lip->ijkl',M.Gamma_g(x),M.Gamma_g(x))

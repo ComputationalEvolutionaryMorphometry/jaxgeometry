@@ -39,7 +39,7 @@ class Manifold(object):
 
     def centered_chart(self,coords):
         """ return centered coordinate chart. Must be implemented by inheriting classes """
-        assert(False)
+        return jnp.zeros(1)
 
     def coords(self,coords=None,chart=None):
         """ return coordinate representation of point in manifold """
@@ -137,7 +137,7 @@ class EmbeddedManifold(Manifold):
         if v is not None and v_steps is None:
             v_steps = np.arange(0,n_steps)        
     
-        if type(x) == type(()): # map to S2
+        if type(x) == type(()): # map to manifold
             Fx = self.F(x)
             chart = x[1]
         else: # get coordinates
@@ -146,7 +146,7 @@ class EmbeddedManifold(Manifold):
             x = (self.invF((Fx,chart)),chart)
 
         if prevx is not None:
-            if type(prevx) == type(()): # map to S2
+            if type(prevx) == type(()): # map to manifold
                 Fprevx = self.F(prevx)
             else:
                 Fprevx = prevx

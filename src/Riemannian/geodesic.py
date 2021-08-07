@@ -27,14 +27,14 @@ def initialize(M):
         dx2t = -jnp.einsum('ikl,k,l->i',M.Gamma_g((x[0],chart)),x[1],x[1])
         dx1t = x[1] 
         return jnp.stack((dx1t,dx2t))
-    
+
     def chart_update_geodesic(xv,chart,y):
         if M.do_chart_update is None:
             return (xv,chart)
     
         v = xv[1]
         x = (xv[0],chart)
-    
+
         update = M.do_chart_update(x)
         new_chart = M.centered_chart(M.F(x))
         new_x = M.update_coords(x,new_chart)[0]

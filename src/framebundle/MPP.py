@@ -31,6 +31,8 @@ def initialize(M):
         t,gammaphivchi,chart = c
         lambd, = y
     
+        lambd2 = lambd**2; lambdm2 = lambd**(-2)
+
         gamma = gammaphivchi[:M.dim] # point
         phi = gammaphivchi[M.dim:M.dim+M.dim**2].reshape((M.dim,M.dim)) # frame
         gammaphi = gammaphivchi[:M.dim+M.dim**2] # point and frame
@@ -38,8 +40,7 @@ def initialize(M):
         chi = gammaphivchi[2*M.dim+M.dim**2:].reshape((M.dim,M.dim)) # \chi
         
         # derivatives
-        dv= .5*jnp.einsum('l,jikl,ij,k->l',lambd**2,lax.stop_gradient(M.R((gamma,chart))),chi,v)
-        lambd2 = lambd**2; lambdm2 = lambd**(-2)
+        dv= .5*jnp.einsum('l,ijkl,ij,k->l',lambd2,lax.stop_gradient(M.R((gamma,chart))),chi,v)
         dchi = jnp.einsum('ji,ij,i,j->ij',lambd2.reshape((2,1))-lambd2.reshape((1,2)),.5*jnp.outer(lambdm2,lambdm2),v,v)
         dgammaphi = jnp.dot(lax.stop_gradient(M.Horizontal((gammaphi,chart))),v)
     
@@ -86,24 +87,24 @@ def initialize(M):
         xT = xs[-1][0:M.dim]; chartT = charts[-1]; chiT = chis[-1]
         y_chartT = M.update_coords(y,chartT)
         return (1./M.dim)*jnp.sum(jnp.square(xT-y_chartT[0]))+(1./M.dim**2)*jnp.sum(jnp.square(chiT))
-    # constraint
-    def c(vchi,u,lambd):
-        v = vchi[0:M.dim]
-        chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
-        xs,_,chis,charts = M.MPP_forwardt(u,lambd,v,chi)
-        chiT = chis[-1]
-        return 1e-8-(1./M.dim**2)*jnp.sum(jnp.square(chiT))
+#    # constraint
+#    def c(vchi,u,lambd):
+#        v = vchi[0:M.dim]
+#        chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
+#        xs,_,chis,charts = M.MPP_forwardt(u,lambd,v,chi)
+#        chiT = chis[-1]
+#        return 1e-8-(1./M.dim**2)*jnp.sum(jnp.square(chiT))
     
     def MPP(u,lambd,y):
-        res = scipy.optimize.minimize(f,jnp.zeros(M.dim+M.dim**2),args=(u,lambd,y),method='BFGS',options={'disp': False, 'eps': 1e-5, 'maxiter': 100})
-        # print(res)
-        res = scipy.optimize.minimize(f,
-                        res.x,
-                        args=(u,lambd,y),
-                        method='COBYLA',
-                        constraints={'type':'ineq','fun':c, 'args': (u,lambd)},
-                        )
-        # print(res)
+        res = scipy.optimize.minimize(f,jnp.zeros(M.dim+M.dim**2),args=(u,lambd,y),method='BFGS',options={'disp': False, 'gtol': 1e-06, 'eps': 1e-4, 'maxiter': 100})
+        #print(res)
+        #res = scipy.optimize.minimize(f,
+        #                res.x,
+        #                args=(u,lambd,y),
+        #                method='COBYLA',
+        #                constraints={'type':'ineq','fun':c, 'args': (u,lambd)},
+        #                )
+        #print(res)
         vchi = res.x
         
         v = vchi[0:M.dim]
