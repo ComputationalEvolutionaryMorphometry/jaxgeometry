@@ -42,7 +42,7 @@ def initialize(M):
         # derivatives
         dv= .5*jnp.einsum('l,ijkl,ij,k->l',lambd2,lax.stop_gradient(M.R((gamma,chart))),chi,v)
         dchi = jnp.einsum('ji,ij,i,j->ij',lambd2.reshape((2,1))-lambd2.reshape((1,2)),.5*jnp.outer(lambdm2,lambdm2),v,v)
-        dgammaphi = jnp.dot(lax.stop_gradient(M.Horizontal((gammaphi,chart))),v)
+        dgammaphi = jnp.tensordot(lax.stop_gradient(M.Horizontal((gammaphi,chart))),v,(1,0))
     
         return jnp.hstack((dgammaphi.flatten(),dv,dchi.flatten()))
     

@@ -30,7 +30,7 @@ def initialize(M):
 
         gsharpx = M.gsharp((x,chart))
         X = jnp.linalg.cholesky(gsharpx)
-        det = -.5*jnp.tensordot(gsharpx,M.Gamma_g((x,chart)),((0,1),(0,1)))
+        det = -.5*jnp.einsum('kl,ikl->i',gsharpx,M.Gamma_g((x,chart)))
         sto = jnp.tensordot(X,dW,(1,0))
         return (det,sto,X)
     

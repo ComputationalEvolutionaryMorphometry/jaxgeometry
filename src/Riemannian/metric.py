@@ -47,20 +47,27 @@ def initialize(M,truncate_high_order_derivatives=False):
     M.LogAbsDeterminant = lambda x,A: LogAbsDet()(jnp.tensordot(M.g(x),A,(1,0)))
 
     ##### Sharp and flat map:
-    M.flat = lambda x,v: jnp.dot(M.g(x),v)
-    M.sharp = lambda x,p: jnp.dot(M.gsharp(x),p)
+    M.flat = lambda x,v: jnp.tensordot(M.g(x),v,(1,0))
+    M.sharp = lambda x,p: jnp.tensordot(M.gsharp(x),p,(1,0))
 
     ##### Christoffel symbols
     # \Gamma^i_{kl}, indices in that order
-    M.Gamma_g = lambda x: 0.5*(jnp.einsum('im,mkl->ikl',M.gsharp(x),M.Dg(x))
-                   +jnp.einsum('im,mlk->ikl',M.gsharp(x),M.Dg(x))
-                   -jnp.einsum('im,klm->ikl',M.gsharp(x),M.Dg(x)))
+    #M.Gamma_g = lambda x: 0.5*(jnp.einsum('im,mkl->ikl',M.gsharp(x),M.Dg(x))
+    #               +jnp.einsum('im,mlk->ikl',M.gsharp(x),M.Dg(x))
+    #               -jnp.einsum('im,klm->ikl',M.gsharp(x),M.Dg(x)))
+    def Gamma_g(x):
+        Dgx = M.Dg(x)
+        gsharpx = M.gsharp(x)
+        return 0.5*(jnp.einsum('im,mkl->ikl',gsharpx,Dgx)
+                   +jnp.einsum('im,mlk->ikl',gsharpx,Dgx)
+                   -jnp.einsum('im,klm->ikl',gsharpx,Dgx))
+    M.Gamma_g = Gamma_g
     M.DGamma_g = jacfwdx(M.Gamma_g)
 
     # Inner Product from g
-    M.dot = lambda x,v,w: jnp.dot(jnp.dot(M.g(x),w),v)
+    M.dot = lambda x,v,w: jnp.tensordot(jnp.tensordot(M.g(x),w,(1,0)),v,(0,0))
     M.norm = lambda x,v: jnp.sqrt(M.dot(x,v,v))
-    M.dotsharp = lambda x,p,pp: jnp.dot(jnp.dot(M.gsharp(x),pp),p)
+    M.dotsharp = lambda x,p,pp: jnp.tensordot(jnp.tensordot(M.gsharp(x),pp,(1,0)),p,(0,0))
     M.conorm = lambda x,p: jnp.sqrt(M.dotsharp(x,p,p))
 
     ##### Gram-Schmidt and basis
@@ -68,9 +75,9 @@ def initialize(M,truncate_high_order_derivatives=False):
     M.orthFrame = lambda x: jnp.slinalg.Cholesky()(M.gsharp(x))
 
     ##### Hamiltonian
-    M.H = lambda q,p: 0.5*jnp.dot(p,jnp.dot(M.gsharp(q),p))
+    M.H = lambda q,p: 0.5*jnp.tensordot(p,jnp.tensordot(M.gsharp(q),p,(1,0)),(0,0))
 
     # gradient, divergence, and Laplace-Beltrami
     M.grad = lambda x,f: M.sharp(x,gradx(f(x)))
-    M.div = lambda x,X: jnp.trace(jacfwdx(X(x)))+.5*jnp.dot(X(x),gradx(jnp.linalg.logdet(M.g(x))))
+    M.div = lambda x,X: jnp.trace(jacfwdx(X(x)))+.5*jnp.tensordot(X(x),gradx(jnp.linalg.logdet(M.g(x))),(1,0))
     M.Laplacian = lambda x,f: M.div(x,lambda x: M.grad(x,f))

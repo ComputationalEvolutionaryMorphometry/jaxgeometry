@@ -111,11 +111,10 @@ def initialize(M):
         # Contribution from the coordinate basis for x: 
         dx = nu
         # Contribution from the basis for Xa:
-        dnu = -jnp.tensordot(nu, jnp.tensordot(nu, M.Gamma_g(x),(0,2)),(0,2))
+        Gammahgammaj = jnp.einsum('hji,ig->hgj',M.Gamma_g(x),nu) # same as Gammanu above
+        dnu = -jnp.einsum('hgj,ji->hgi',Gammahgammaj,nu)
 
-        dnuv = dnu.reshape((nu.shape[1],dnu.shape[1]*dnu.shape[2]))
-
-        return jnp.concatenate([dx,dnuv.T],axis = 0)
+        return jnp.concatenate([dx,dnu.reshape((-1,nu.shape[1]))],axis=0)
     M.Horizontal = Horizontal
     
 

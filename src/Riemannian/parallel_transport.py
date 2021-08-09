@@ -34,8 +34,7 @@ def initialize(M):
                 dx,
                 M.update_vector((x,chart),prevx,prevchart,dx)
             )
-        dv = - jnp.tensordot(jnp.tensordot(dx, M.Gamma_g((x,chart)),axes = (0,1)),
-                            v, axes = (1,0))
+        dv = -jnp.einsum('ikl,k,l->i',M.Gamma_g((x,chart)),dx,v)
         return jnp.stack((jnp.zeros_like(x),dv))
     
     def chart_update_parallel_transport(xv,prevchart,y):

@@ -77,11 +77,11 @@ class EmbeddedManifold(Manifold):
 
     def update_vector(self,coords,new_coords,new_chart,v):
         """ change tangent vector between charts """
-        return jnp.dot(self.invJF((self.F((new_coords,new_chart)),new_chart)),jnp.dot(self.JF(coords),v))
+        return jnp.tensordot(self.invJF((self.F((new_coords,new_chart)),new_chart)),jnp.tensordot(self.JF(coords),v,(1,0)),(1,0))
 
     def update_covector(self,coords,new_coords,new_chart,p):
         """ change cotangent vector between charts """
-        return jnp.dot(self.JF((new_coords,new_chart)).T,jnp.dot(self.invJF((self.F(coords),coords[1])).T,p))
+        return jnp.tensordot(self.JF((new_coords,new_chart)).T,jnp.tensordot(self.invJF((self.F(coords),coords[1])).T,p,(1,0)),(1,0))
 
     def __init__(self,F=None,dim=None,emb_dim=None,invF=None):
         Manifold.__init__(self)
@@ -96,7 +96,7 @@ class EmbeddedManifold(Manifold):
             self.invJF = jacfwdx(self.invF)
 
             # metric matrix
-            self.g = lambda x: jnp.dot(self.JF(x).T,self.JF(x))
+            self.g = lambda x: jnp.tensordot(self.JF(x),self.JF(x),(0,0))
 
 
     def plot_path(self, xs, vs=None, v_steps=None, i0=0, color='b', 

@@ -33,7 +33,7 @@ def initialize(M):
         nu = u[0][M.dim:].reshape((M.dim,-1))
         m = nu.shape[1]
 
-        det = jnp.tensordot(M.Horizontal(u)[:,0:m], dgamma, axes = [1,0])
+        det = jnp.tensordot(M.Horizontal(u)[:,0:m],dgamma,(1,0))
     
         return det
 
@@ -48,7 +48,7 @@ def initialize(M):
         nu = u[0][M.dim:].reshape((M.dim,-1))
         m = nu.shape[1]
 
-        sto = jnp.tensordot(M.Horizontal(u)[:,0:m], dsm, axes = [1,0])
+        sto = jnp.tensordot(M.Horizontal(u)[:,0:m],dsm,(1,0))
     
         return (jnp.zeros_like(sto), sto, M.Horizontal(u)[:,0:m])
 
