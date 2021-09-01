@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
+# along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
 
@@ -41,6 +41,18 @@ def jacfwdx(f):
         return jax.jacfwd(fxchart,argnums=0)(x[0],x[1],*args,**kwargs)
     return jacf
 
+# jax.jacrev but only for the x variable of a function taking coordinates and chart
+def jacrevx(f):
+    def fxchart(x,chart,*args,**kwargs):
+        return f((x,chart),*args,**kwargs)
+    def jacf(x,*args,**kwargs):
+        return jax.jacrev(fxchart,argnums=0)(x[0],x[1],*args,**kwargs)
+    return jacf
+
+# hessian only for the x variable of a function taking coordinates and chart
+def hessianx(f):
+    return jacfwdx(jacrevx(f))
+
 # time increments, deterministic
 def dts(T=T,n_steps=n_steps):
     return jnp.array([T/n_steps]*n_steps)
@@ -50,10 +62,15 @@ def dts(T=T,n_steps=n_steps):
 seed = 42
 global key
 key = jax.random.PRNGKey(seed)
-def dWs(d,T=T,n_steps=n_steps):
+def dWs(d,T=T,n_steps=n_steps,num=1):
     global key
-    key, subkey = jax.random.split(key)
-    return jnp.sqrt(T/n_steps)*random.normal(subkey,(n_steps,d))
+    keys = jax.random.split(key,num=num+1)
+    key = keys[0]
+    subkeys = keys[1:]
+    if num == 1:
+        return jnp.sqrt(T/n_steps)*random.normal(subkeys[0],(n_steps,d))
+    else:
+        return jax.vmap(lambda subkey: jnp.sqrt(T/n_steps)*random.normal(subkey,(n_steps,d)))(subkeys)    
 
 # Integrator (deterministic)
 def integrator(ode_f,chart_update=None,method=default_method):
@@ -98,7 +115,7 @@ def integrate(ode,chart_update,dts,x,chart,*ys):
 def integrate_sde(sde,integrator,chart_update,x,chart,dWt,*cy):
     _,xs = lax.scan(integrator(sde,chart_update),
             (0.,x,chart,*cy),
-            dWt)
+            (dWt,))
     return xs
 
 def integrator_stratonovich(sde_f,chart_update=None):
@@ -111,8 +128,8 @@ def integrator_stratonovich(sde_f,chart_update=None):
 
         (detx, stox, X, *dcy) = sde_f(c,y)
         tx = x + stox
-        cy_new = tuple(cy_new + (y+dt*dy,) for (y,dy) in zip(cy,dcy))
-        return ((t+dt,*chart_update(x + dt*detx + 0.5*(stox + sde_f((t+dt,tx,chart,*cy),y)[1]), chart, cy_new),*cy_new),)*2
+        cy_new = tuple([y+dt*dy for (y,dy) in zip(cy,dcy)])
+        return ((t+dt,*chart_update(x + dt*detx + 0.5*(stox + sde_f((t+dt,tx,chart,*cy),y)[1]), chart, cy_new),),)*2
 
     return euler_heun
 
@@ -125,8 +142,8 @@ def integrator_ito(sde_f,chart_update=None):
         dW = y
 
         (detx, stox, X, *dcy) = sde_f(c,y)
-        cy_new = tuple(cy_new + (y+dt*dy,) for (y,dy) in zip(cy,dcy))
-        return ((t+dt,*chart_update(x + dt*detx + stox, chart, cy_new),*cy_new),)*2
+        cy_new = tuple([y+dt*dy for (y,dy) in zip(cy,dcy)])
+        return ((t+dt,*chart_update(x + dt*detx + stox, chart, cy_new)),)*2
 
     return euler
 

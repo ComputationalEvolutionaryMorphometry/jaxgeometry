@@ -42,7 +42,7 @@ def initialize(M):
     # Stochastic development
     def sde_development(c,y):
         t,u,chart = c
-        dsm = y
+        dsm, = y
 
         u = (u,chart)
         nu = u[0][M.dim:].reshape((M.dim,-1))

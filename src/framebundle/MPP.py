@@ -28,49 +28,48 @@ from src.utils import *
 def initialize(M):
 
     def ode_mpp(c,y):
-        t,gammaphivchi,chart = c
-        lambd, = y
+        t,gammafvchi,chart = c
+        Sigma,Sigmainv = y
     
-        lambd2 = lambd**2; lambdm2 = lambd**(-2)
-
-        gamma = gammaphivchi[:M.dim] # point
-        phi = gammaphivchi[M.dim:M.dim+M.dim**2].reshape((M.dim,M.dim)) # frame
-        gammaphi = gammaphivchi[:M.dim+M.dim**2] # point and frame
-        v = gammaphivchi[M.dim+M.dim**2:2*M.dim+M.dim**2] # anti-development of \dot{\gamma}
-        chi = gammaphivchi[2*M.dim+M.dim**2:].reshape((M.dim,M.dim)) # \chi
+        gamma = gammafvchi[:M.dim] # point
+        f = gammafvchi[M.dim:M.dim+M.dim**2].reshape((M.dim,M.dim)) # frame
+        gammaf = gammafvchi[:M.dim+M.dim**2] # point and frame
+        v = gammafvchi[M.dim+M.dim**2:2*M.dim+M.dim**2] # \dot{\gamma} in f-coordinates
+        chi = gammafvchi[2*M.dim+M.dim**2:].reshape((M.dim,M.dim)) # \chi
         
         # derivatives
-        dv= .5*jnp.einsum('l,ijkl,ij,k->l',lambd2,lax.stop_gradient(M.R((gamma,chart))),chi,v)
-        dchi = jnp.einsum('ji,ij,i,j->ij',lambd2.reshape((2,1))-lambd2.reshape((1,2)),.5*jnp.outer(lambdm2,lambdm2),v,v)
-        dgammaphi = jnp.tensordot(lax.stop_gradient(M.Horizontal((gammaphi,chart))),v,(1,0))
+        dv= .5*jnp.einsum('rl,ijkl,ij,k->r',Sigmainv,lax.stop_gradient(M.R((gamma,chart))),chi,v)
+        Sigmav = jnp.einsum('ik,k->i',Sigma,v)
+        dchi = jnp.einsum('j,i->ij',v,Sigmav)-jnp.einsum('i,j->ij',v,Sigmav)
+        dgammaf = jnp.tensordot(lax.stop_gradient(M.Horizontal((gammaf,chart))),v,(1,0))
     
-        return jnp.hstack((dgammaphi.flatten(),dv,dchi.flatten()))
+        return jnp.hstack((dgammaf.flatten(),dv,dchi.flatten()))
     
-    def chart_update_mpp(gammaphivchi,chart,*args):
+    def chart_update_mpp(gammafvchi,chart,*args):
         if M.do_chart_update is None:
-            return (gammaphivphi,chart)
+            return (gammafvchi,chart)
     
-        gamma = gammaphivchi[:M.dim]
-        phi = gammaphivchi[M.dim:M.dim+M.dim**2].reshape((M.dim,M.dim)) # frame
-        v= gammaphivchi[M.dim+M.dim**2:2*M.dim+M.dim**2] # anti-development of \dot{\gamma}
-        chi = gammaphivchi[2*M.dim+M.dim**2:].reshape((M.dim,M.dim)) # \chi
+        gamma = gammafvchi[:M.dim]
+        f = gammafvchi[M.dim:M.dim+M.dim**2].reshape((M.dim,M.dim)) # frame
+        v= gammafvchi[M.dim+M.dim**2:2*M.dim+M.dim**2] # anti-development of \dot{\gamma}
+        chi = gammafvchi[2*M.dim+M.dim**2:].reshape((M.dim,M.dim)) # \chi
         
         update = M.do_chart_update((gamma,chart))
         new_chart = M.centered_chart(M.F((gamma,chart)))
         new_gamma = M.update_coords((gamma,chart),new_chart)[0]
     
         return (jnp.where(update,
-                                jnp.concatenate((new_gamma,M.update_vector((gamma,chart),new_gamma,new_chart,phi).flatten(),v,chi.flatten())),
-                                gammaphivchi),
+                                jnp.concatenate((new_gamma,M.update_vector((gamma,chart),new_gamma,new_chart,f).flatten(),v,chi.flatten())),
+                                gammafvchi),
                 jnp.where(update,
                                 new_chart,
                                 chart))
     
     
-    M.mpp = jit(lambda gammaphivchi,lambd,dts: integrate(ode_mpp,chart_update_mpp,dts,gammaphivchi[0],gammaphivchi[1],lambd))
+    M.mpp = jit(lambda gammafvchi,Sigma,invSigma,dts: integrate(ode_mpp,chart_update_mpp,dts,gammafvchi[0],gammafvchi[1],Sigma,invSigma))
     
-    def MPP_forwardt(u,lambd,v,chi,T=T,n_steps=n_steps):
-        curve = M.mpp((jnp.hstack((u[0],v,chi.flatten())),u[1]),jnp.tile(lambd,(n_steps,1)),dts(T,n_steps))
+    def MPP_forwardt(u,Sigma,v,chi,T=T,n_steps=n_steps):
+        curve = M.mpp((jnp.hstack((u[0],v,chi.flatten())),u[1]),jnp.broadcast_to(Sigma[None,...],(n_steps,)+Sigma.shape),jnp.broadcast_to(jnp.linalg.inv(Sigma)[None,...],(n_steps,)+Sigma.shape),dts(T,n_steps))
         us = curve[1][:,0:M.dim+M.dim**2]
         vs = curve[1][:,M.dim+M.dim**2:2*M.dim+M.dim**2]
         chis = curve[1][:,2*M.dim+M.dim**2:].reshape((-1,M.dim,M.dim))
@@ -80,30 +79,25 @@ def initialize(M):
 
     # optimization
     # objective
-    def f(vchi,u,lambd,y):
+    def MPP_f(vchi,Sigma):
+        v = vchi[0:M.dim]
+        return jnp.dot(v,jnp.dot(Sigma,v))
+    # constraint
+    def MPP_c(vchi,u,Sigma,y):
         v = vchi[0:M.dim]
         chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
-        xs,_,chis,charts = M.MPP_forwardt(u,lambd,v,chi)
+        xs,_,chis,charts = M.MPP_forwardt(u,Sigma,v,chi)
         xT = xs[-1][0:M.dim]; chartT = charts[-1]; chiT = chis[-1]
         y_chartT = M.update_coords(y,chartT)
-        return (1./M.dim)*jnp.sum(jnp.square(xT-y_chartT[0]))+(1./M.dim**2)*jnp.sum(jnp.square(chiT))
-#    # constraint
-#    def c(vchi,u,lambd):
-#        v = vchi[0:M.dim]
-#        chi = vchi[M.dim:].reshape((M.dim,M.dim)); chi = .5*(chi-chi.T)
-#        xs,_,chis,charts = M.MPP_forwardt(u,lambd,v,chi)
-#        chiT = chis[-1]
-#        return 1e-8-(1./M.dim**2)*jnp.sum(jnp.square(chiT))
+        return (1./M.dim)*jnp.sum(jnp.square(xT-y_chartT[0]))+(1./(M.dim**2-M.dim))*jnp.sum(jnp.square(chiT))
     
-    def MPP(u,lambd,y):
-        res = scipy.optimize.minimize(f,jnp.zeros(M.dim+M.dim**2),args=(u,lambd,y),method='BFGS',options={'disp': False, 'gtol': 1e-06, 'eps': 1e-4, 'maxiter': 100})
-        #print(res)
-        #res = scipy.optimize.minimize(f,
-        #                res.x,
-        #                args=(u,lambd,y),
-        #                method='COBYLA',
-        #                constraints={'type':'ineq','fun':c, 'args': (u,lambd)},
-        #                )
+    def MPP(u,Sigma,y):
+        res = scipy.optimize.minimize(MPP_f,
+                        jnp.zeros(M.dim+M.dim**2),
+                        args=(Sigma),
+                        method='trust-constr',
+                        constraints={'type':'eq','fun':MPP_c, 'args': (u,Sigma,y)},
+                        )
         #print(res)
         vchi = res.x
         

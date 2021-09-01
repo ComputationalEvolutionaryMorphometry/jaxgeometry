@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
+# along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
 
@@ -29,23 +29,16 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.ticker as ticker
 
-class Ellipsoid(EmbeddedManifold):
-    """ 2d Ellipsoid """
+class Torus(EmbeddedManifold):
+    """ 2d torus, embedded metric """
 
     def chart(self):
         """ return default coordinate chart """
-        if self.chart_center == 'x':
-            return jnp.eye(3)[:,0]
-        elif self.chart_center == 'y':
-            return jnp.eye(3)[:,1]
-        elif self.chart_center == 'z':
-            return jnp.eye(3)[:,2]
-        else:
-            assert(False)
+        return jnp.zeros(self.dim)
 
-    def centered_chart(self,x):
+    def centered_chart(self,coords=None):
         """ return centered coordinate chart """
-        return x/self.params
+        return self.invF((coords,self.chart()))  # chart centered at coords
 
     def get_B(self,v):
         """ R^3 basis with first basis vector v """
@@ -56,53 +49,56 @@ class Ellipsoid(EmbeddedManifold):
         b3 = cross(b1,b2)
         return jnp.stack((b1,b2,b3),axis=1)
 
-    # Logarithm with standard Riemannian metric on S^2
-    def StdLog(self, x,y):
-        y = y/self.params # from ellipsoid to S^2
-        proj = lambda x,y: jnp.dot(x,y)*x
-        Fx = self.F(x)/self.params
-        v = y-proj(Fx,y)
-        theta = jnp.arccos(jnp.dot(Fx,y))
-        normv = jnp.linalg.norm(v,2)
-        w = theta/normv*v if normv >= 1e-5 else jnp.zeros_like(v)
-        return jnp.dot(self.invJF((Fx,x[1])),self.params*w)
+    # Logarithm with standard Riemannian metric
+    def StdLog(self,_x,y): 
+        (x,chart) = self.update_coords(_x,self.centered_chart(self.F(_x)))
+        y = self.invF((y,chart))
+        return self.update_vector((x,chart),_x[0],_x[1],y-x)
+    
+    def __init__(self,params=(1.,2.,jnp.array([0.,1.,0.]))):
+        self.radius = params[0] # axis of small circle
+        self.Radius = params[1] # axis of large circle
+        self.orientation = jnp.array(params[2]) # axis of cylinder
 
-    def __init__(self,params=np.array([1.,1.,1.]),chart_center='z',use_spherical_coords=False):
-        self.params = jnp.array(params) # ellipsoid parameters (e.g. [1.,1.,1.] for sphere)
-        self.use_spherical_coords = use_spherical_coords
-        self.chart_center = chart_center
-
-        if not use_spherical_coords:
-            F = lambda x: self.params*jnp.dot(self.get_B(x[1]),jnp.stack([-(-1+x[0][0]**2+x[0][1]**2),2*x[0][0],2*x[0][1]])/(1+x[0][0]**2+x[0][1]**2))
-            def invF(x):
-                Rinvx = jnp.linalg.solve(self.get_B(x[1]),x[0]/self.params)
-                return jnp.stack([Rinvx[1]/(1+Rinvx[0]),Rinvx[2]/(1+Rinvx[0])])
-            self.do_chart_update = lambda x: jnp.linalg.norm(x[0]) > .1 # look for a new chart if true
-        # spherical coordinates, no charts
-        self.F_spherical = lambda phitheta: self.params*jnp.stack([jnp.sin(phitheta[1]-np.pi/2)*jnp.cos(phitheta[0]),jnp.sin(phitheta[1]-np.pi/2)*jnp.sin(phitheta[0]),jnp.cos(phitheta[1]-np.pi/2)])
-        self.JF_spherical = lambda x: jnp.jacobian(self.F_spherical(x),x)
-        self.F_spherical_inv = lambda x: jnp.stack([jnp.arctan2(x[1],x[0]),jnp.arccos(x[2])])
-        self.g_spherical = lambda x: jnp.dot(self.JF_spherical(x).T,self.JF_spherical(x))
-        self.mu_Q_spherical = lambda x: 1./jnp.nlinalg.Det()(self.g_spherical(x))
-
-        ## optionally use spherical coordinates in chart computations
-        #if use_spherical_coords:
-        #    F = lambda x: jnp.dot(x[1],self.F_spherical(x[0]))
+        F = lambda x: jnp.dot(self.get_B(self.orientation),
+                jnp.stack([self.radius*jnp.sin(x[0][1]+x[1][1]),
+                        (self.Radius+self.radius*jnp.cos(x[0][1]+x[1][1]))*jnp.cos(x[0][0]+x[1][0]),
+                        (self.Radius+self.radius*jnp.cos(x[0][1]+x[1][1]))*jnp.sin(x[0][0]+x[1][0])]))
+        def invF(x):
+            Rinvx = jnp.linalg.solve(self.get_B(self.orientation),x[0])
+            rotangle0 = -x[1][0]
+            rot0 = jnp.dot(jnp.stack(
+                (jnp.stack((jnp.cos(rotangle0),-jnp.sin(rotangle0))),
+                 jnp.stack((jnp.sin(rotangle0),jnp.cos(rotangle0))))),
+                Rinvx[1:])
+            phi = jnp.arctan2(rot0[1],rot0[0])
+            rotangle1 = -x[1][1]
+            #epsilons = jnp.where(jnp.cos(phi) >= 1e-4,
+            #                          jnp.stack((0.,1e-4)),
+            #                          jnp.stack((1e-4,0.))) # to avoid divide by zero in gradient computations
+            #rcosphi = jnp.where(jnp.cos(phi) >= 1e-4,
+            #                          rot0[0]/(jnp.cos(phi)+epsilons[0])-self.Radius,
+            #                          rot0[1]/(jnp.sin(phi)+epsilons[1])-self.Radius)
+            rcosphi = jnp.where(jnp.cos(phi) >= 1e-4,
+                                      rot0[0]/jnp.cos(phi)-self.Radius,
+                                      rot0[1]/jnp.sin(phi)-self.Radius)
+            rot1 = jnp.dot(jnp.stack(
+                (jnp.stack((jnp.cos(rotangle1),-jnp.sin(rotangle1))),
+                 jnp.stack((jnp.sin(rotangle1),jnp.cos(rotangle1))))),
+                jnp.stack((rcosphi,Rinvx[0])))
+            theta = jnp.arctan2(rot1[1],rot1[0])
+            return jnp.stack([phi,theta])
+        self.do_chart_update = lambda x: jnp.max(jnp.abs(x[0])) >= np.pi/4 # look for a new chart if true
 
         EmbeddedManifold.__init__(self,F,2,3,invF=invF)
 
-        # action of matrix group on elements
-        self.act = lambda g,x: jnp.tensordot(g,x,(1,0))
-        self.acts = lambda g,x: jnp.tensordot(g,x,(2,0))
-
-
     def __str__(self):
-        return "%dd ellipsoid, parameters %s, spherical coords %s" % (self.dim,self.params,self.use_spherical_coords)
+        return "torus in R^3, radius %s, Radius %s, axis %s" % (self.radius,self.Radius,self.orientation)
 
     def newfig(self):
         newfig3d()
 
-    def plot(self,rotate=None,alpha=None,lw=0.3):
+    def plot(self, rotate=None,alpha=None,lw=0.3):
         ax = plt.gca()
         x = np.arange(-10,10,1)
         ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
@@ -124,21 +120,24 @@ class Ellipsoid(EmbeddedManifold):
     #         ax.view_init(35,225)
         plt.xlabel('x')
         plt.ylabel('y')
-    
+
     #    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
         #draw ellipsoid
-        u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-        x=self.params[0]*np.cos(u)*np.sin(v)
-        y=self.params[1]*np.sin(u)*np.sin(v)
-        z=self.params[2]*np.cos(v)
+        u, v = np.mgrid[-np.pi:np.pi:20j, -np.pi:np.pi:10j]
+        x = np.zeros(u.shape)
+        y = np.zeros(u.shape)
+        z = np.zeros(u.shape)
+        for i in range(u.shape[0]):
+            for j in range(u.shape[1]):
+                w = self.F(self.coords(jnp.array([u[i,j],v[i,j]])))
+                x[i,j] = w[0]; y[i,j] = w[1]; z[i,j] = w[2]
         ax.plot_wireframe(x, y, z, color='gray', alpha=0.5)
-    
+
         if alpha is not None:
             ax.plot_surface(x, y, z, color=cm.jet(0.), alpha=alpha)
 
-
     def plot_field(self, field,lw=.3):
-        ax = plt.gca(projection='3d')
+        ax = plt.gca()
         x = np.arange(-10,10,1)
         ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
         ax.w_yaxis.set_major_locator(ticker.FixedLocator(x))
@@ -157,17 +156,22 @@ class Ellipsoid(EmbeddedManifold):
         plt.xlabel('x')
         plt.ylabel('y')
 
-#        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-        #draw ellipsoid
-        u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
-        x=self.params[0]*np.cos(u)*np.sin(v)
-        y=self.params[1]*np.sin(u)*np.sin(v)
-        z=self.params[2]*np.cos(v)
+        u, v = np.mgrid[-np.pi:np.pi:40j, -np.pi:np.pi:20j]
+        x = np.zeros(u.shape)
+        y = np.zeros(u.shape)
+        z = np.zeros(u.shape)
+        for i in range(u.shape[0]):
+            for j in range(u.shape[1]):
+                w = self.F(self.coords(jnp.array([u[i,j],v[i,j]])))
+                x[i,j] = w[0]; y[i,j] = w[1]; z[i,j] = w[2]
         
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 Fx = np.array([x[i,j],y[i,j],z[i,j]])
-                chart = self.centered_chart(Fx)
+                chart = self.centered_chartf(Fx)
                 xcoord = self.invF((Fx,chart))
                 v = field((xcoord,chart))
                 self.plotx((xcoord,chart),v=v)
+
+
+

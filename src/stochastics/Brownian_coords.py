@@ -26,7 +26,7 @@ def initialize(M):
 
     def sde_Brownian_coords(c,y):
         t,x,chart = c
-        dW = y
+        dW, = y
 
         gsharpx = M.gsharp((x,chart))
         X = jnp.linalg.cholesky(gsharpx)
