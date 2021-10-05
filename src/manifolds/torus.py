@@ -79,9 +79,12 @@ class Torus(EmbeddedManifold):
             #rcosphi = jnp.where(jnp.cos(phi) >= 1e-4,
             #                          rot0[0]/(jnp.cos(phi)+epsilons[0])-self.Radius,
             #                          rot0[1]/(jnp.sin(phi)+epsilons[1])-self.Radius)
-            rcosphi = jnp.where(jnp.cos(phi) >= 1e-4,
-                                      rot0[0]/jnp.cos(phi)-self.Radius,
-                                      rot0[1]/jnp.sin(phi)-self.Radius)
+            #rcosphi = jnp.where(jnp.cos(phi) >= 1e-4,
+            #                          rot0[0]/jnp.cos(phi)-self.Radius,
+            #                          rot0[1]/jnp.sin(phi)-self.Radius)
+            rcosphi = jax.lax.cond(jnp.cos(phi) >= 1e-4,
+                    lambda _: rot0[0]/jnp.cos(phi)-self.Radius,
+                    lambda _: rot0[1]/jnp.sin(phi)-self.Radius,operand=None)
             rot1 = jnp.dot(jnp.stack(
                 (jnp.stack((jnp.cos(rotangle1),-jnp.sin(rotangle1))),
                  jnp.stack((jnp.sin(rotangle1),jnp.cos(rotangle1))))),

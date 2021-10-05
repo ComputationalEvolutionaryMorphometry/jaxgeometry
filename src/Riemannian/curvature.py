@@ -32,12 +32,12 @@ def initialize(M):
     Returns:
         4-tensor R_ijk^l in with order i,j,k,l
         (see e.g. https://en.wikipedia.org/wiki/List_of_formulas_in_Riemannian_geometry#(3,1)_Riemann_curvature_tensor )
-        Note that sign convention is different compared to e.g. Lee, Riemannian Manifolds.
+        Note that sign convention follows e.g. Lee, Riemannian Manifolds.
     """
-    M.R = jit(lambda x: jnp.einsum('pik,ljp->ijkl',M.Gamma_g(x),M.Gamma_g(x))
+    M.R = jit(lambda x: -(jnp.einsum('pik,ljp->ijkl',M.Gamma_g(x),M.Gamma_g(x))
                 -jnp.einsum('pjk,lip->ijkl',M.Gamma_g(x),M.Gamma_g(x))
                 +jnp.einsum('likj->ijkl',M.DGamma_g(x))
-                -jnp.einsum('ljki->ijkl',M.DGamma_g(x)))
+                -jnp.einsum('ljki->ijkl',M.DGamma_g(x))))
     
     """
     Riemannian Curvature form
@@ -52,30 +52,30 @@ def initialize(M):
     """
     M.R_u = jit(lambda x,u: jnp.einsum('ml,ijql,qk->ijmk',jnp.linalg.inv(u),R(x),u))
     
-    """
-    Sectional curvature
-    
-    Args:
-        x: point on manifold
-        e1,e2: two orthonormal vectors spanning the section
-    
-    Returns:
-        sectional curvature K(e1,e2)
-    """
-    @jit
-    def sec_curv(x,e1,e2):
-        Rflat = jnp.tensordot(M.R(x),M.g(x),[3,0])
-        sec = jnp.tensordot(
-                jnp.tensordot(
-                    jnp.tensordot(
-                        jnp.tensordot(
-                            Rflat, 
-                            e1, [0,0]), 
-                        e2, [0,0]),
-                    e2, [0,0]), 
-                e1, [0,0])
-        return sec
-    M.sec_curv = sec_curv
+#    """
+#    Sectional curvature
+#    
+#    Args:
+#        x: point on manifold
+#        e1,e2: two orthonormal vectors spanning the section
+#    
+#    Returns:
+#        sectional curvature K(e1,e2)
+#    """
+#    @jit
+#    def sec_curv(x,e1,e2):
+#        Rflat = jnp.tensordot(M.R(x),M.g(x),[3,0])
+#        sec = jnp.tensordot(
+#                jnp.tensordot(
+#                    jnp.tensordot(
+#                        jnp.tensordot(
+#                            Rflat, 
+#                            e1, [0,0]), 
+#                        e2, [0,0]),
+#                    e2, [0,0]), 
+#                e1, [0,0])
+#        return sec
+#    M.sec_curv = sec_curv
     
     """
     Ricci curvature
@@ -86,7 +86,7 @@ def initialize(M):
     Returns:
         2-tensor R_ij in order i,j
     """
-    M.Ricci_curv = jit(lambda x: jnp.einsum('ijkj->ik',M.R(x)))
+    M.Ricci_curv = jit(lambda x: jnp.einsum('kijk->ij',M.R(x)))
     
     """
     Scalar curvature
@@ -97,5 +97,5 @@ def initialize(M):
     Returns:
         scalar curvature
     """
-    M.S_curv = jit(lambda x: jnp.einsum('ik,ik->',M.Ricci_curv(x),M.gsharp(x)))
+    M.S_curv = jit(lambda x: jnp.einsum('ij,ij->',M.gsharp(x),M.Ricci_curv(x)))
     
