@@ -27,9 +27,11 @@ import scipy
 import jax
 import jax.numpy as jnp
 from jax import lax
-from jax import grad, jacfwd, jacrev, jit, vmap, partial
+from jax import grad, jacfwd, jacrev, jit, vmap
 from jax import random
 from jax.scipy import optimize
+
+from functools import partial
 
 from src.utils import *
 

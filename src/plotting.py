@@ -84,7 +84,7 @@ def plot_density_estimate(M, obss, alpha=.2, limits=None, border=1.5, bandwidth=
     fs = np.exp(kde.score_samples(xy))#/np.apply_along_axis(muM_Qf,1,xy)
     norm = mpl.colors.Normalize(vmin=0.,vmax=np.max(fs))
     colors = cmap(norm(fs)).reshape(X.shape+(4,))
-    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, facecolors = colors,            linewidth=0., antialiased=True, alpha=alpha, edgecolor=(0,0,0,0), shade=False)
+    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, facecolors = colors, linewidth=0., antialiased=True, alpha=alpha, edgecolor=(0,0,0,0), shade=False)
     m = cm.ScalarMappable(cmap=surf.cmap,norm=norm)
     m.set_array(colors)
     if colorbar:

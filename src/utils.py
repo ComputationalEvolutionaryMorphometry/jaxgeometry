@@ -120,7 +120,7 @@ def integrate_sde(sde,integrator,chart_update,x,chart,dWt,*cy):
 
 def integrator_stratonovich(sde_f,chart_update=None):
     if chart_update == None: # no chart update
-        chart_update = lambda *args: args[0:2]
+        chart_update = lambda xp,chart,cy: (xp,chart,*cy)
 
     def euler_heun(c,y):
         t,x,chart,*cy = c
@@ -135,7 +135,7 @@ def integrator_stratonovich(sde_f,chart_update=None):
 
 def integrator_ito(sde_f,chart_update=None):
     if chart_update == None: # no chart update
-        chart_update = lambda *args: argsargs[0:2]
+        chart_update = lambda xp,chart,cy: (xp,chart,*cy)
 
     def euler(c,y):
         t,x,chart,*cy = c

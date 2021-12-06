@@ -20,6 +20,7 @@
 
 from src.setup import *
 from src.params import *
+from src.plotting import *
 
 from src.manifolds.manifold import *
 
@@ -72,7 +73,7 @@ class landmarks(Manifold):
         self.d2k = d2k
 
         # in coordinates
-        self.k_q = lambda q1,q2: self.k(q1.reshape((-1,m))[:,np.newaxis,:]-q2.reshape((-1,m))[np.newaxis,:,:])
+        self.k_q = lambda q1,q2: self.k(q1.reshape((-1,self.m))[:,np.newaxis,:]-q2.reshape((-1,self.m))[np.newaxis,:,:])
         self.K = lambda q1,q2: (self.k_q(q1,q2)[:,:,np.newaxis,np.newaxis]*jnp.eye(self.m)[np.newaxis,np.newaxis,:,:]).transpose((0,2,1,3)).reshape((-1,self.dim))
 
         ##### Metric:
@@ -86,11 +87,32 @@ class landmarks(Manifold):
         #self.d2K = lambda q1,q2: jacobianx(self.DK(q1,q2).flatten(),q1).reshape((self.N,self.m,self.N,self.m,self.N,self.m,self.N,self.m))
         ##self.P = lambda q1,q2,alpha,beta: self.dK(q1,q2)
 
+    ##### Change number of landmarks
+    def setN(self, N):
+        self.N = N # number of landmarks
+        self.dim = self.m*self.N
+        self.rank = self.dim
+
+    ##### Change embedding space dimension
+    def setdim(self, m, k_sigma):
+        self.m = m # landmark space dimension (usually 2 or 3
+        self.dim = self.m*self.N
+        self.rank = self.dim
+        self.k_sigma = jnp.array(k_sigma) # standard deviation of the kernel
+        self.inv_k_sigma = jnp.linalg.inv(self.k_sigma)
+
     def __str__(self):
         return "%d landmarks in R^%d (dim %d). kernel %s, k_alpha=%d, k_sigma=%s" % (self.N,self.m,self.dim,self.kernel,self.k_alpha,self.k_sigma)
 
+    def newfig(self):
+        if self.m == 2:
+            newfig2d()
+        elif self.m == 3:
+            newfig3d()
+
     def plot(self):
-        plt.axis('equal')
+        if self.m == 2:
+            plt.axis('equal')
 
     def plot_path(self, xs, u=None, color='b', color_intensity=1., linewidth=1., prevx=None, last=True, curve=False, markersize=None, arrowcolor='k'):
         xs = list(xs)
@@ -117,16 +139,27 @@ class landmarks(Manifold):
         x = x.reshape((-1,self.m))
         NN = x.shape[0]
 
+        ax = plt.gca()
+
         for j in range(NN):
             if last:
-                plt.scatter(x[j,0],x[j,1],color=color,s=markersize)
+                if self.m == 2:
+                    plt.scatter(x[j,0],x[j,1],color=color,s=markersize)
+                elif self.m == 3:
+                    ax.scatter(x[j,0],x[j,1],x[j,2],color=color,s=markersize if markersize else 50)
             else:
                 try:
                     prevx = prevx.reshape((NN,self.m))
                     xx = np.stack((prevx[j,:],x[j,:]))
-                    plt.plot(xx[:,0],xx[:,1],linewidth=linewidth,color=color)
+                    if self.m == 2:
+                        plt.plot(xx[:,0],xx[:,1],linewidth=linewidth,color=color)
+                    elif self.m == 3:
+                        ax.plot(xx[:,0],xx[:,1],xx[:,2],linewidth=linewidth,color=color)
                 except:
-                    plt.scatter(x[j,0],x[j,1],color=color,s=markersize)
+                    if self.m == 2:
+                        plt.scatter(x[j,0],x[j,1],color=color,s=markersize)
+                    elif self.m == 3:
+                        ax.scatter(x[j,0],x[j,1],x[j,2],color=color,s=markersize if markersize else 50)
 
             try:
                 u = u.reshape((NN, self.m))
