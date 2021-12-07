@@ -94,7 +94,7 @@ class landmarks(Manifold):
         self.rank = self.dim
 
     ##### Change embedding space dimension
-    def setdim(self, m, k_sigma):
+    def setm(self, m, k_sigma):
         self.m = m # landmark space dimension (usually 2 or 3
         self.dim = self.m*self.N
         self.rank = self.dim
