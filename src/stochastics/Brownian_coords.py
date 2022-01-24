@@ -39,7 +39,7 @@ def initialize(M):
             return (x,chart)
 
         update = M.do_chart_update(x)
-        new_chart = M.centered_chart(M.F((x,chart)))
+        new_chart = M.centered_chart((x,chart))
         new_x = M.update_coords((x,chart),new_chart)[0]
 
         return (jnp.where(update,

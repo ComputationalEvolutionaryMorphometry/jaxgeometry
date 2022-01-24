@@ -20,7 +20,7 @@
 from src.setup import *
 from src.utils import *
 
-def initialize(M,f=None):
+def initialize(M,f=None,method='BFGS'):
     """ numerical Riemannian Logarithm map """
 
     if f is None:
@@ -31,6 +31,8 @@ def initialize(M,f=None):
         y_chart1 = M.update_coords(y,chart1)
         return 1./M.dim*jnp.sum(jnp.square(x1 - y_chart1[0]))
     dloss = jax.grad(loss,1)
+    #from scipy.optimize import approx_fprime
+    #dloss = lambda x,v,y: approx_fprime(v,lambda v: loss(x,v,y),1e-4)
 
     from scipy.optimize import minimize,fmin_bfgs,fmin_cg
     def shoot(x,y,v0=None):        
@@ -38,7 +40,7 @@ def initialize(M,f=None):
         if v0 is None:
             v0 = jnp.zeros(M.dim)
 
-        res = minimize(lambda w: (loss(x,w,y),dloss(x,w,y)), v0, method='BFGS', jac=True, options={'disp': False, 'maxiter': 100})
+        res = minimize(lambda w: (loss(x,w,y),dloss(x,w,y)), v0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
 
         return (res.x,res.fun)
 

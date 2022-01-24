@@ -87,19 +87,25 @@ class landmarks(Manifold):
         #self.d2K = lambda q1,q2: jacobianx(self.DK(q1,q2).flatten(),q1).reshape((self.N,self.m,self.N,self.m,self.N,self.m,self.N,self.m))
         ##self.P = lambda q1,q2,alpha,beta: self.dK(q1,q2)
 
-    ##### Change number of landmarks
+    ##### number of landmarks
     def setN(self, N):
         self.N = N # number of landmarks
         self.dim = self.m*self.N
         self.rank = self.dim
 
-    ##### Change embedding space dimension
+    ##### embedding space dimension
     def setm(self, m, k_sigma):
         self.m = m # landmark space dimension (usually 2 or 3
         self.dim = self.m*self.N
         self.rank = self.dim
         self.k_sigma = jnp.array(k_sigma) # standard deviation of the kernel
         self.inv_k_sigma = jnp.linalg.inv(self.k_sigma)
+
+    #### k_sigma
+    def setk_sigma(self,k_sigma):
+        self.k_sigma = jnp.array(k_sigma) # standard deviation of the kernel
+        self.inv_k_sigma = jnp.linalg.inv(self.k_sigma)
+        self.k_Sigma = jnp.tensordot(self.k_sigma,self.k_sigma,(1,1))
 
     def __str__(self):
         return "%d landmarks in R^%d (dim %d). kernel %s, k_alpha=%d, k_sigma=%s" % (self.N,self.m,self.dim,self.kernel,self.k_alpha,self.k_sigma)

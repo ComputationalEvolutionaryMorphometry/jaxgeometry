@@ -113,12 +113,12 @@ def integrate(ode,chart_update,dts,x,chart,*ys):
 
 
 def integrate_sde(sde,integrator,chart_update,x,chart,dWt,*cy):
-    _,xs = lax.scan(integrator(sde,chart_update),
+    _,xs = lax.scan(integrator(sde,T/dWt.shape[0],chart_update),
             (0.,x,chart,*cy),
             (dWt,))
     return xs
 
-def integrator_stratonovich(sde_f,chart_update=None):
+def integrator_stratonovich(sde_f,dt,chart_update=None):
     if chart_update == None: # no chart update
         chart_update = lambda xp,chart,cy: (xp,chart,*cy)
 
@@ -133,7 +133,7 @@ def integrator_stratonovich(sde_f,chart_update=None):
 
     return euler_heun
 
-def integrator_ito(sde_f,chart_update=None):
+def integrator_ito(sde_f,dt,chart_update=None):
     if chart_update == None: # no chart update
         chart_update = lambda xp,chart,cy: (xp,chart,*cy)
 
@@ -154,3 +154,15 @@ def cross(a, b):
         a[2]*b[0] - a[0]*b[2],
         a[0]*b[1] - a[1]*b[0]])
 
+#import numpy as np
+#def python_scan(f, init, xs, length=None):
+#  if xs is None:
+#    xs = [None] * length
+#  carry = init
+#  ys = []
+#  for i in range(xs[0].shape[0]):
+#    x = (xs[0][i],)
+#    carry, y = f(carry, x)
+#    ys.append(y)
+#  return carry, np.stack(ys)
+#

@@ -20,11 +20,9 @@
 
 from src.setup import *
 from src.utils import *
-from src.linalg import *
 
 def initialize(M,truncate_high_order_derivatives=False):
     """ add metric related structures to manifold """
-
 
     d = M.dim
 
@@ -58,8 +56,8 @@ def initialize(M,truncate_high_order_derivatives=False):
     def Gamma_g(x):
         Dgx = M.Dg(x)
         gsharpx = M.gsharp(x)
-        return 0.5*(jnp.einsum('im,mkl->ikl',gsharpx,Dgx)
-                   +jnp.einsum('im,mlk->ikl',gsharpx,Dgx)
+        return 0.5*(jnp.einsum('im,kml->ikl',gsharpx,Dgx)
+                   +jnp.einsum('im,lmk->ikl',gsharpx,Dgx)
                    -jnp.einsum('im,klm->ikl',gsharpx,Dgx))
     M.Gamma_g = Gamma_g
     M.DGamma_g = jacfwdx(M.Gamma_g)

@@ -27,7 +27,6 @@ from src.setup import *
 # default integration times and time steps
 T = 1.
 n_steps = 100
-dt = (T-0)/n_steps
 
 # Integrator variables:
 default_method = 'euler'
