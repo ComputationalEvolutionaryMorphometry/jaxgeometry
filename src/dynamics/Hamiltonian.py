@@ -42,7 +42,7 @@ def initialize(M):
         x = (xp[0],chart)
     
         update = M.do_chart_update(x)
-        new_chart = M.centered_chart(M.F(x))
+        new_chart = M.centered_chart(x)
         new_x = M.update_coords(x,new_chart)[0]
     
         return (jnp.where(update,

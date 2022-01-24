@@ -67,7 +67,7 @@ def initialize(M):
         chi = gammafvchi[2*M.dim+M.dim**2:] # \chi
         
         update = M.do_chart_update((gamma,chart))
-        new_chart = M.centered_chart(M.F((gamma,chart)))
+        new_chart = M.centered_chart((gamma,chart))
         new_gamma = M.update_coords((gamma,chart),new_chart)[0]
     
         return (jnp.where(update,

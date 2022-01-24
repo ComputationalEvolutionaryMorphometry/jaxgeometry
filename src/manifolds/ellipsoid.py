@@ -45,7 +45,7 @@ class Ellipsoid(EmbeddedManifold):
 
     def centered_chart(self,x):
         """ return centered coordinate chart """
-        return x/self.params
+        return self.F(x)/self.params
 
     def get_B(self,v):
         """ R^3 basis with first basis vector v """

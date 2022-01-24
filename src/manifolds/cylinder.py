@@ -36,9 +36,9 @@ class Cylinder(EmbeddedManifold):
         """ return default coordinate chart """
         return jnp.zeros(self.dim)
 
-    def centered_chart(self,coords=None):
+    def centered_chart(self,x):
         """ return centered coordinate chart """
-        return self.invF((coords,self.chart()))  # chart centered at coords
+        return self.invF((self.F(x),self.chart()))  # chart centered at coords
 
     def get_B(self,v):
         """ R^3 basis with first basis vector v """

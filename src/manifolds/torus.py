@@ -38,7 +38,7 @@ class Torus(EmbeddedManifold):
 
     def centered_chart(self,coords=None):
         """ return centered coordinate chart """
-        return self.invF((coords,self.chart()))  # chart centered at coords
+        return self.invF((self.F(coords),self.chart()))  # chart centered at coords
 
     def get_B(self,v):
         """ R^3 basis with first basis vector v """
