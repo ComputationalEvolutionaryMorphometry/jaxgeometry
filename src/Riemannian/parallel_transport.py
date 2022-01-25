@@ -49,5 +49,5 @@ def initialize(M):
                                        jnp.stack((x,M.update_vector((prevx,prevchart),x,chart,v)))),
                 chart)
 
-    parallel_transport = lambda v,dts,xs,charts,dxs: integrate(ode_parallel_transport,chart_update_parallel_transport,dts,jnp.stack((xs[0],v)),charts[0],xs,charts,dxs)
+    parallel_transport = lambda v,dts,xs,charts,dxs: integrate(ode_parallel_transport,chart_update_parallel_transport,jnp.stack((xs[0],v)),charts[0],dts,xs,charts,dxs)
     M.parallel_transport = jit(lambda v,dts,xs,charts,dxs: parallel_transport(v,dts,xs,charts,dxs)[1][:,1])

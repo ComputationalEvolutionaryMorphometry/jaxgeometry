@@ -26,7 +26,7 @@ def initialize(M):
 
     def sde_Brownian_coords(c,y):
         t,x,chart = c
-        dW, = y
+        dt,dW = y
 
         gsharpx = M.gsharp((x,chart))
         X = jnp.linalg.cholesky(gsharpx)
@@ -51,4 +51,4 @@ def initialize(M):
     
     M.sde_Brownian_coords = sde_Brownian_coords
     M.chart_update_Brownian_coords = chart_update_Brownian_coords
-    M.Brownian_coords = jit(lambda x,dWt: integrate_sde(sde_Brownian_coords,integrator_ito,chart_update_Brownian_coords,x[0],x[1],dWt))
+    M.Brownian_coords = jit(lambda x,dts,dWs: integrate_sde(sde_Brownian_coords,integrator_ito,chart_update_Brownian_coords,x[0],x[1],dts,dWs))

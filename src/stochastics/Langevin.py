@@ -29,7 +29,7 @@ def initialize(M):
 
     def sde_Langevin(c,y):
         t,x,chart,l,s = c
-        dW, = y
+        dt,dW = y
         dqt = dq((x[0],chart),x[1])
         dpt = dp((x[0],chart),x[1])-l*dq((x[0],chart),x[1])
 
@@ -57,6 +57,6 @@ def initialize(M):
                             chart),
                 *cy)
 
-    M.Langevin_qp = lambda q,p,l,s,dWt: integrate_sde(sde_Langevin,integrator_ito,chart_update_Langevin,jnp.stack((q[0],p)),q[1],dWt,l,s)
+    M.Langevin_qp = lambda q,p,l,s,dts,dWt: integrate_sde(sde_Langevin,integrator_ito,chart_update_Langevin,jnp.stack((q[0],p)),q[1],dts,dWt,l,s)
 
-    M.Langevin = lambda q,p,l,s,dWt: M.Langevin_qp(q,p,l,s,dWt)[0:3]
+    M.Langevin = lambda q,p,l,s,dts,dWt: M.Langevin_qp(q,p,l,s,dts,dWt)[0:3]

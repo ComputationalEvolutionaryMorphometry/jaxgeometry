@@ -78,7 +78,7 @@ def initialize(M):
                                 chart))
     
     
-    M.mpp = jit(lambda gammafvchi,lamb,dts: integrate(ode_mpp,chart_update_mpp,dts,gammafvchi[0],gammafvchi[1],lamb))
+    M.mpp = jit(lambda gammafvchi,lamb,dts: integrate(ode_mpp,chart_update_mpp,gammafvchi[0],gammafvchi[1],dts,lamb))
     
     @jit
     def MPP_forwardt(u,lamb,v,chi,T=T,n_steps=n_steps):

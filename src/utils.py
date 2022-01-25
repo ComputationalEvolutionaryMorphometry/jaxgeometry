@@ -62,15 +62,17 @@ def dts(T=T,n_steps=n_steps):
 seed = 42
 global key
 key = jax.random.PRNGKey(seed)
-def dWs(d,T=T,n_steps=n_steps,num=1):
+def dWs(d,_dts=None,num=1):
     global key
     keys = jax.random.split(key,num=num+1)
     key = keys[0]
     subkeys = keys[1:]
+    if _dts == None:
+        _dts = dts()
     if num == 1:
-        return jnp.sqrt(T/n_steps)*random.normal(subkeys[0],(n_steps,d))
+        return jnp.sqrt(_dts)[:,None]*random.normal(subkeys[0],(_dts.shape[0],d))
     else:
-        return jax.vmap(lambda subkey: jnp.sqrt(T/n_steps)*random.normal(subkey,(n_steps,d)))(subkeys)    
+        return jax.vmap(lambda subkey: jnp.sqrt(_dts)[:,None]*random.normal(subkey,(_dts.shape[0],d)))(subkeys)    
 
 # Integrator (deterministic)
 def integrator(ode_f,chart_update=None,method=default_method):
@@ -101,7 +103,7 @@ def integrator(ode_f,chart_update=None,method=default_method):
         assert(False)
 
 # return symbolic path given ode and integrator
-def integrate(ode,chart_update,dts,x,chart,*ys):
+def integrate(ode,chart_update,x,chart,dts,*ys):
     _,xs = lax.scan(integrator(ode,chart_update),
             (0.,x,chart),
             (dts,*ys))
@@ -112,19 +114,19 @@ def integrate(ode,chart_update,dts,x,chart,*ys):
 # and Sigma stochastic generator (i.e. often sto=dot(Sigma,dW)
 
 
-def integrate_sde(sde,integrator,chart_update,x,chart,dWt,*cy):
-    _,xs = lax.scan(integrator(sde,T/dWt.shape[0],chart_update),
+def integrate_sde(sde,integrator,chart_update,x,chart,dts,dWs,*cy):
+    _,xs = lax.scan(integrator(sde,chart_update),
             (0.,x,chart,*cy),
-            (dWt,))
+            (dts,dWs,))
     return xs
 
-def integrator_stratonovich(sde_f,dt,chart_update=None):
+def integrator_stratonovich(sde_f,chart_update=None):
     if chart_update == None: # no chart update
         chart_update = lambda xp,chart,cy: (xp,chart,*cy)
 
     def euler_heun(c,y):
         t,x,chart,*cy = c
-        dW = y
+        dt,dW = y
 
         (detx, stox, X, *dcy) = sde_f(c,y)
         tx = x + stox
@@ -133,13 +135,13 @@ def integrator_stratonovich(sde_f,dt,chart_update=None):
 
     return euler_heun
 
-def integrator_ito(sde_f,dt,chart_update=None):
+def integrator_ito(sde_f,chart_update=None):
     if chart_update == None: # no chart update
         chart_update = lambda xp,chart,cy: (xp,chart,*cy)
 
     def euler(c,y):
         t,x,chart,*cy = c
-        dW = y
+        dt,dW = y
 
         (detx, stox, X, *dcy) = sde_f(c,y)
         cy_new = tuple([y+dt*dy for (y,dy) in zip(cy,dcy)])

@@ -24,13 +24,13 @@ from src.utils import *
 def initialize(M):
     """ Brownian motion from stochastic development """
 
-    def Brownian_development(x,dWt):
+    def Brownian_development(x,dts,dWs):
         # amend x with orthogonal basis to get initial frame bundle element
         gsharpx = M.gsharp(x)
         nu = jnp.linalg.cholesky(gsharpx)
         u = (jnp.concatenate((x[0],nu.flatten())),x[1])
         
-        (ts,us,charts) = M.stochastic_development(u,dWt)
+        (ts,us,charts) = M.stochastic_development(u,dts,dWs)
         
         return (ts,us[:,0:M.dim],charts)
     

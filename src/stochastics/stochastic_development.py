@@ -37,20 +37,20 @@ def initialize(M):
     
         return det
 
-    M.development = jit(lambda u,dgamma,dts: integrate(ode_development,M.chart_update_FM,dts,u[0],u[1],dgamma))
+    M.development = jit(lambda u,dgamma,dts: integrate(ode_development,M.chart_update_FM,u[0],u[1],dts,dgamma))
 
     # Stochastic development
     def sde_development(c,y):
         t,u,chart = c
-        dsm, = y
+        dt,dW = y
 
         u = (u,chart)
         nu = u[0][M.dim:].reshape((M.dim,-1))
         m = nu.shape[1]
 
-        sto = jnp.tensordot(M.Horizontal(u)[:,0:m],dsm,(1,0))
+        sto = jnp.tensordot(M.Horizontal(u)[:,0:m],dW,(1,0))
     
         return (jnp.zeros_like(sto), sto, M.Horizontal(u)[:,0:m])
 
     M.sde_development = sde_development
-    M.stochastic_development = jit(lambda u,dWt: integrate_sde(sde_development,integrator_stratonovich,M.chart_update_FM,u[0],u[1],dWt))
+    M.stochastic_development = jit(lambda u,dts,dWs: integrate_sde(sde_development,integrator_stratonovich,M.chart_update_FM,u[0],u[1],dts,dWs))

@@ -36,7 +36,7 @@ def initialize(M,k=None):
 
     def sde_Eulerian(c,y):
         t,x,chart,sigmas_x,sigmas_a = c
-        dW, = y
+        dt,dW = y
         dqt = dq((x[0],chart),x[1])
         dpt = dp((x[0],chart),x[1])
         
@@ -72,5 +72,5 @@ def initialize(M,k=None):
                             chart),
                 *cy)
 
-    M.Eulerian_qp = lambda q,p,sigmas_x,sigmas_a,dWt: integrate_sde(sde_Eulerian,integrator_ito,chart_update_Eulerian,jnp.stack((q[0],p)),q[1],dWt,sigmas_x,sigmas_a)
-    M.Eulerian = lambda q,p,sigmas_x,sigmas_a,dWt: M.Eulerian_qp(q,p,sigmas_x,sigmas_a,dWt)[0:3]
+    M.Eulerian_qp = lambda q,p,sigmas_x,sigmas_a,dts,dWs: integrate_sde(sde_Eulerian,integrator_ito,chart_update_Eulerian,jnp.stack((q[0],p)),q[1],dts,dWs,sigmas_x,sigmas_a)
+    M.Eulerian = lambda q,p,sigmas_x,sigmas_a,dts,dWs: M.Eulerian_qp(q,p,sigmas_x,sigmas_a,dts,dWs)[0:3]

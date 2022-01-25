@@ -52,7 +52,7 @@ def initialize(M):
                             new_chart,
                             chart))
     
-    M.Hamiltonian_dynamics = jit(lambda q,p,dts: integrate(ode_Hamiltonian,chart_update_Hamiltonian,dts,jnp.stack((q[0],p)), q[1]))
+    M.Hamiltonian_dynamics = jit(lambda q,p,dts: integrate(ode_Hamiltonian,chart_update_Hamiltonian,jnp.stack((q[0],p)),q[1],dts))
     
     def Exp_Hamiltonian(q,p,T=T,n_steps=n_steps):
         curve = M.Hamiltonian_dynamics(q,p,dts(T,n_steps))

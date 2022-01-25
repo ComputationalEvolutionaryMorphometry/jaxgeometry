@@ -46,7 +46,7 @@ def initialize(M):
                                 new_chart,
                                 chart))
     
-    M.geodesic = jit(lambda x,v,dts: integrate(ode_geodesic,chart_update_geodesic,dts,jnp.stack((x[0],v)), x[1]))
+    M.geodesic = jit(lambda x,v,dts: integrate(ode_geodesic,chart_update_geodesic,jnp.stack((x[0],v)),x[1],dts))
     
     def Exp(x,v,T=T,n_steps=n_steps):
         curve = M.geodesic(x,v,dts(T,n_steps))
