@@ -48,6 +48,10 @@ class landmarks(Manifold):
         ##### Kernel on M:
         if self.kernel == 'Gaussian':
             k = lambda x: self.k_alpha*jnp.exp(-.5*jnp.square(jnp.tensordot(x,self.inv_k_sigma,(x.ndim-1,1))).sum(x.ndim-1))
+        elif self.kernel == 'K0':
+            def k(x):
+                r = jnp.sqrt((1e-7+jnp.square(jnp.tensordot(x,self.inv_k_sigma,(x.ndim-1,1))).sum(x.ndim-1)))
+                return self.k_alpha*jnp.exp(-r)
         elif self.kernel == 'K1':
             def k(x):
                 r = jnp.sqrt((1e-7+jnp.square(jnp.tensordot(x,self.inv_k_sigma,(x.ndim-1,1))).sum(x.ndim-1)))
