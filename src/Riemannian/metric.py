@@ -41,8 +41,18 @@ def initialize(M,truncate_high_order_derivatives=False):
     M.mu_Q = lambda x: 1./jnp.nlinalg.Det()(M.g(x))
 
     ### Determinant
-    M.determinant = lambda x,A: jnp.nlinalg.Det()(jnp.tensordot(M.g(x),A,(1,0)))
-    M.LogAbsDeterminant = lambda x,A: LogAbsDet()(jnp.tensordot(M.g(x),A,(1,0)))
+    def det(x,A=None): 
+        return jnp.linalg.det(M.g(x)) if A is None else jnp.linalg.det(jnp.tensordot(M.g(x),A,(1,0)))
+    def detsharp(x,A=None): 
+        return jnp.linalg.det(M.gsharp(x)) if A is None else jnp.linalg.det(jnp.tensordot(M.gsharp(x),A,(1,0)))
+    M.det = det
+    M.detsharp = detsharp
+    def logAbsDet(x,A=None): 
+        return jnp.linalg.slogdet(M.g(x))[1] if A is None else jnp.linalg.slogdet(jnp.tensordot(M.g(x),A,(1,0)))[1]
+    def logAbsDetsharp(x,A=None): 
+        return jnp.linalg.slogdet(M.gsharp(x))[1] if A is None else jnp.linalg.slogdet(jnp.tensordot(M.gsharp(x),A,(1,0)))[1]
+    M.logAbsDet = logAbsDet
+    M.logAbsDetsharp = logAbsDetsharp
 
     ##### Sharp and flat map:
     M.flat = lambda x,v: jnp.tensordot(M.g(x),v,(1,0))
