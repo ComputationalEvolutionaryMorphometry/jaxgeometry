@@ -86,6 +86,7 @@ def initialize(M,truncate_high_order_derivatives=False):
     M.H = lambda q,p: 0.5*jnp.tensordot(p,jnp.tensordot(M.gsharp(q),p,(1,0)),(0,0))
 
     # gradient, divergence, and Laplace-Beltrami
-    M.grad = lambda x,f: M.sharp(x,gradx(f(x)))
-    M.div = lambda x,X: jnp.trace(jacfwdx(X(x)))+.5*jnp.tensordot(X(x),gradx(jnp.linalg.logdet(M.g(x))),(1,0))
+    M.grad = lambda x,f: M.sharp(x,gradx(f)(x))
+    M.div = lambda x,X: jnp.trace(jacfwdx(X)(x))+.5*jnp.dot(X(x),gradx(M.linalg.logAbsDet)(x))
+    M.divsharp = lambda x,X: jnp.trace(jacfwdx(X)(x))-.5*jnp.dot(X(x),gradx(M.logAbsDetsharp)(x))
     M.Laplacian = lambda x,f: M.div(x,lambda x: M.grad(x,f))
