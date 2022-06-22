@@ -77,7 +77,7 @@ def dWs(d,_dts=None,num=1):
 # Integrator (deterministic)
 def integrator(ode_f,chart_update=None,method=default_method):
     if chart_update == None: # no chart update
-        chart_update = lambda *args: args
+        chart_update = lambda *args: args[0:2]
 
     # euler:
     def euler(c,y):

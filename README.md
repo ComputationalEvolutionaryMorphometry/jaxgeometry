@@ -27,6 +27,12 @@ pip install jax jaxlib jupyter matplotlib multiprocess sklearn
 ```
 If you don't use a virtual environment, make sure that you are actually using Python 3, e.g. use pip3 instead of pip.
 
+Alternatively, use conda. This may work better for example on Apple M1:
+```
+conda install -c conda-forge jaxlib
+conda install -c conda-forge jax
+```
+
 Start jupyter notebook 
 ```
 jupyter notebook
