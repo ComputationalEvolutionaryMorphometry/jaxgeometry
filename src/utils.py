@@ -131,7 +131,7 @@ def integrator_stratonovich(sde_f,chart_update=None):
         (detx, stox, X, *dcy) = sde_f(c,y)
         tx = x + stox
         cy_new = tuple([y+dt*dy for (y,dy) in zip(cy,dcy)])
-        return ((t+dt,*chart_update(x + dt*detx + 0.5*(stox + sde_f((t+dt,tx,chart,*cy),y)[1]), chart, cy_new),),)*2
+        return ((t+dt,*chart_update(x + dt*detx + 0.5*(stox + sde_f((t+dt,tx,chart,*cy),y)[1]), chart, *cy_new),),)*2
 
     return euler_heun
 
@@ -145,7 +145,7 @@ def integrator_ito(sde_f,chart_update=None):
 
         (detx, stox, X, *dcy) = sde_f(c,y)
         cy_new = tuple([y+dt*dy for (y,dy) in zip(cy,dcy)])
-        return ((t+dt,*chart_update(x + dt*detx + stox, chart, cy_new)),)*2
+        return ((t+dt,*chart_update(x + dt*detx + stox, chart, *cy_new)),)*2
 
     return euler
 

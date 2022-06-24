@@ -33,11 +33,11 @@ def initialize(M,sde,chart_update,integrator=integrator_ito):
         return (det,sto,X,*dcy)
     
     # note: y is not parametrized on product and thus cannot be updated by chart update
-    def chart_update_product(x,chart,y):
+    def chart_update_product(x,chart,*ys):
         if M.do_chart_update is None:
-            return (x,chart,*y)
+            return (x,chart,*ys)
 
-        return (*jax.vmap(lambda x,chart: chart_update(x,chart,y),0)(x,chart),*y)
+        return (*jax.vmap(lambda x,chart: chart_update(x,chart,*ys),0)(x,chart),*ys)
     
     M.sde_product = sde_product
     M.chart_update_product = chart_update_product

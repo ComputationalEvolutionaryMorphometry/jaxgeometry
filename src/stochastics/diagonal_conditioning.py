@@ -52,11 +52,20 @@ def initialize(M,sde_product,chart_update_product,integrator=integrator_ito,T=1)
             return (det+h,sto,X,0.,*dcy)
         else:
             return (det+h,sto,X,0.,jnp.zeros_like(ref_chart),*dcy)
+
+    def chart_update_diagonal(x,chart,*ys):
+        if M.do_chart_update is None:
+            return (x,chart,*ys)
+
+        (ref_chart,T,*_ys) = ys
+
+        (new_x,new_chart,*new_ys) = chart_update_product(x,chart,*_ys)
+        return (new_x,new_chart,ref_chart,T,*new_ys)
     
     M.sde_diagonal = sde_diagonal
     M.chart_update_diagonal = chart_update_product
     if M.do_chart_update is None:
         M.diagonal = jit(lambda x,dts,dWt: integrate_sde(sde_diagonal,integrator,M.chart_update_diagonal,x[0],x[1],dts,dWt,jnp.sum(dts))[0:3])
     else:
-        M.diagonal = jit(lambda x,dts,dWt,ref_chart: integrate_sde(sde_diagonal,integrator,M.chart_update_diagonal,x[0],x[1],dts,dWt,jnp.sum(dts),ref_chart)[0:3])
+        M.diagonal = jit(lambda x,dts,dWt,ref_chart: integrate_sde(sde_diagonal,integrator,chart_update_diagonal,x[0],x[1],dts,dWt,jnp.sum(dts),ref_chart)[0:3])
 

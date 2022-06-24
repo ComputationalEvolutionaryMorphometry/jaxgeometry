@@ -34,9 +34,9 @@ def initialize(M):
         sto = jnp.tensordot(D,dW,(1,0))
         return (det,sto,D)
     
-    def chart_update_Brownian_sR(x,chart,y):
+    def chart_update_Brownian_sR(x,chart,*ys):
         if M.do_chart_update is None:
-            return (x,chart,*y)
+            return (x,chart,*ys)
 
         update = M.do_chart_update(x)
         new_chart = M.centered_chart((x,chart))
@@ -47,7 +47,7 @@ def initialize(M):
                                 x),
                 jnp.where(update,
                                 new_chart,
-                                chart))
+                                chart),*ys)
     
     M.sde_Brownian_sR = sde_Brownian_sR
     M.chart_update_Brownian_sR = chart_update_Brownian_sR

@@ -45,7 +45,10 @@ class Ellipsoid(EmbeddedManifold):
 
     def centered_chart(self,x):
         """ return centered coordinate chart """
-        return self.F(x)/self.params
+        if type(x) == type(()): # coordinate tuple
+            return self.F(x)/self.params
+        else:
+            return x/self.params # already in embedding space
 
     def get_B(self,v):
         """ R^3 basis with first basis vector v """
@@ -64,7 +67,10 @@ class Ellipsoid(EmbeddedManifold):
         v = y-proj(Fx,y)
         theta = jnp.arccos(jnp.dot(Fx,y))
         normv = jnp.linalg.norm(v,2)
-        w = theta/normv*v if normv >= 1e-5 else jnp.zeros_like(v)
+        w = jax.lax.cond(normv >= 1e-5,
+                         lambda _: theta/normv*v,
+                         lambda _: jnp.zeros_like(v),
+                         None)
         return jnp.dot(self.invJF((Fx,x[1])),self.params*w)
 
     def __init__(self,params=np.array([1.,1.,1.]),chart_center='z',use_spherical_coords=False):

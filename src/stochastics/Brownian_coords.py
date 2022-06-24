@@ -34,7 +34,7 @@ def initialize(M):
         sto = jnp.tensordot(X,dW,(1,0))
         return (det,sto,X)
     
-    def chart_update_Brownian_coords(x,chart,y):
+    def chart_update_Brownian_coords(x,chart):
         if M.do_chart_update is None:
             return (x,chart)
 
