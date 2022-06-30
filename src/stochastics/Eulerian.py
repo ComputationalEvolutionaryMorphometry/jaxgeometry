@@ -53,7 +53,7 @@ def initialize(M,k=None):
         sto = jnp.stack((sigmadWq,sigmadWp))
         return (det,sto,X,jnp.zeros_like(sigmas_x),jnp.zeros_like(sigmas_a))
 
-    def chart_update_Eulerian(xp,chart,cy):
+    def chart_update_Eulerian(xp,chart,*cy):
         if M.do_chart_update is None:
             return (xp,chart,*cy)
     

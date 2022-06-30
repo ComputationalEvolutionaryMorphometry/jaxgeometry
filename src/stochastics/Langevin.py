@@ -38,7 +38,7 @@ def initialize(M):
         sto = jnp.tensordot(X,dW,(1,0))
         return (det,sto,X,jnp.zeros_like(l),jnp.zeros_like(s))
 
-    def chart_update_Langevin(xp,chart,cy):
+    def chart_update_Langevin(xp,chart,*cy):
         if M.do_chart_update is None:
             return (xp,chart,*cy)
     
