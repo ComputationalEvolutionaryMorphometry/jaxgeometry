@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
+# along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
 
@@ -29,7 +29,7 @@ def initialize(M):
     d  = M.dim
 
     def chart_update_FM(u,chart,*args):
-        if M.do_chart_update is None:
+        if M.do_chart_update != True:
             return (u,chart)
         
         x = (u[0:d],chart)

@@ -24,12 +24,22 @@ from src.plotting import *
 
 from src.manifolds.manifold import *
 
-import matplotlib.pyplot as plt
-
 class landmarks(Manifold):
     """ LDDMM landmark manifold """
 
-    def __init__(self,N=1,m=2,k_alpha=1.,k_sigma=np.diag((.5,.5)),kernel='Gaussian'):
+    def get_B(self,q):
+        """ dual space basis for Laplacian kernel etc. """
+        assert(not self.std_basis)
+
+        PT = jnp.vstack((jnp.ones(self.N),q[0].reshape((self.N,self.m)).T))
+        #codim = self.m*(self.N-PT.shape[0])
+        #svd = jax.scipy.linalg.svd(PT)
+        #V = svd[2].T[:,::-1] # reverse order
+        V = jax.lax.linalg.eigh(PT.T@PT)[0]
+
+        return jnp.kron(V,jnp.eye(self.m))
+
+    def __init__(self,N=1,m=2,k_alpha=1.,k_sigma=None,kernel='Gaussian',order=2):
         Manifold.__init__(self)
 
         self.N = N # number of landmarks
@@ -37,10 +47,18 @@ class landmarks(Manifold):
         self.dim = self.m*self.N
         self.rank = self.dim
 
+        # for cfg kernels
+        self.std_basis = True
+        self.order = order # order of Sobolev kernels
+        self.codim = 0 # dimension of constraint null space
+
         self.update_coords = lambda coords,_: coords
 
         self.k_alpha = k_alpha
-        self.k_sigma = jnp.array(k_sigma) # standard deviation of the kernel
+        if k_sigma == None:
+            self.k_sigma = .5*jnp.eye(self.m)
+        else:
+            self.k_sigma = jnp.array(k_sigma) # standard deviation of the kernel
         self.inv_k_sigma = jnp.linalg.inv(self.k_sigma)
         self.k_Sigma = jnp.tensordot(self.k_sigma,self.k_sigma,(1,1))
         self.kernel = kernel
@@ -68,6 +86,15 @@ class landmarks(Manifold):
             def k(x):
                 r = jnp.sqrt((1e-7+jnp.square(jnp.tensordot(x,self.inv_k_sigma,(x.ndim-1,1))).sum(x.ndim-1)))
                 return self.k_alpha*16*(105+105*r+45*r**2+10*r**3+r**4)*jnp.exp(-r)
+        elif self.kernel == 'laplacian':
+            self.std_basis = False
+            self.codim = self.m*int(scipy.special.binom(self.order-1+self.m,self.m))
+            def k(x):
+                r = jnp.sqrt((1e-7+jnp.square(jnp.tensordot(x,self.inv_k_sigma,(x.ndim-1,1))).sum(x.ndim-1)))
+                if self.m % 2 == 0:
+                    return self.k_alpha*(r**(2*self.order-self.m))*jnp.log(r)
+                else:
+                    return self.k_alpha*(r**(2*self.order-self.m))
         else:
             raise Exception('unknown kernel specified')
         self.k = k
@@ -82,14 +109,27 @@ class landmarks(Manifold):
 
         ##### Metric:
         def gsharp(q):
-            return self.K(q[0],q[0])
+            if self.std_basis:
+                return self.K(q[0],q[0])
+            else:
+                B = self.get_B(q)
+                Bkernel = B[:,:self.dim-self.codim]
+                Bpoly = B[:,self.dim-self.codim:]
+                gsharpB = jnp.einsum('ji,jk,kl->il',Bkernel,self.K(q[0],q[0]),Bkernel)
+                gsharpextB = jax.scipy.linalg.block_diag((gsharpB),jnp.eye(self.codim))
+                return jnp.einsum('ij,jk,kl->il',B,gsharpextB,jnp.linalg.inv(B))
+
         self.gsharp = gsharp
 
+    
+    def update_coords(self,coords,new_chart):
+        return (coords[0],new_chart)
 
-        ##### landmark specific setup (see Micheli, Michor, Mumford 2013)
-        #self.dK = lambda q1,q2: jacobianx(self.K(q1,q2).flatten(),q1).reshape((self.N,self.m,self.N,self.m,self.N,self.m))
-        #self.d2K = lambda q1,q2: jacobianx(self.DK(q1,q2).flatten(),q1).reshape((self.N,self.m,self.N,self.m,self.N,self.m,self.N,self.m))
-        ##self.P = lambda q1,q2,alpha,beta: self.dK(q1,q2)
+    def update_vector(self,coords,new_coords,new_chart,v):
+        return v
+
+    def update_covector(self,coords,new_coords,new_chart,p):
+        return p
 
     ##### number of landmarks
     def setN(self, N):
@@ -112,7 +152,7 @@ class landmarks(Manifold):
         self.k_Sigma = jnp.tensordot(self.k_sigma,self.k_sigma,(1,1))
 
     def __str__(self):
-        return "%d landmarks in R^%d (dim %d). kernel %s, k_alpha=%d, k_sigma=%s" % (self.N,self.m,self.dim,self.kernel,self.k_alpha,self.k_sigma)
+        return "%d landmarks in R^%d (dim %d). kernel %s, k_alpha=%d, k_sigma=%s, standard_basis=%s, cfg kernel codim=%d" % (self.N,self.m,self.dim,self.kernel,self.k_alpha,self.k_sigma,self.std_basis,self.codim)
 
     def newfig(self):
         if self.m == 2:
@@ -142,9 +182,11 @@ class landmarks(Manifold):
     def plotx(self, x, u=None, color='b', color_intensity=1., linewidth=1., prevx=None, last=True, curve=False, markersize=None, arrowcolor='k'):
         assert(type(x) == type(()) or x.shape[0] == self.dim)
         if type(x) == type(()):
-            x = x[0]
+            (x,chart) = x
         if type(prevx) == type(()):
-            prevx = prevx[0]
+            (prevx,prevchart) = prevx
+        #if not self.std_basis:
+        #    x = self.get_B((x,chart))@x
 
         x = x.reshape((-1,self.m))
         NN = x.shape[0]
@@ -159,6 +201,8 @@ class landmarks(Manifold):
                     ax.scatter(x[j,0],x[j,1],x[j,2],color=color,s=markersize if markersize else 50)
             else:
                 try:
+                    #if not self.std_basis:
+                    #    prevx = self.get_B((prevx,prevchart))@prevx
                     prevx = prevx.reshape((NN,self.m))
                     xx = np.stack((prevx[j,:],x[j,:]))
                     if self.m == 2:
@@ -172,6 +216,8 @@ class landmarks(Manifold):
                         ax.scatter(x[j,0],x[j,1],x[j,2],color=color,s=markersize if markersize else 50)
 
             try:
+                #if not self.std_basis:
+                #    u = self.get_B((x,chart))@u
                 u = u.reshape((NN, self.m))
                 plt.quiver(x[j,0], x[j,1], u[j, 0], u[j, 1], pivot='tail', linewidth=linewidth, scale=5, color=arrowcolor)
             except:

@@ -80,7 +80,7 @@ def initialize(M,truncate_high_order_derivatives=False):
 
     ##### Gram-Schmidt and basis
     M.gramSchmidt = lambda x,u: (GramSchmidt_f(M.dotf))(x,u)
-    M.orthFrame = lambda x: jnp.slinalg.Cholesky()(M.gsharp(x))
+    M.orthFrame = lambda x: jnp.linalg.Cholesky(M.gsharp(x))
 
     ##### Hamiltonian
     M.H = lambda q,p: 0.5*jnp.tensordot(p,jnp.tensordot(M.gsharp(q),p,(1,0)),(0,0))

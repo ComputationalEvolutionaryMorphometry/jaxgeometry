@@ -67,5 +67,5 @@ def initialize(M,sde_product,chart_update_product,integrator=integrator_ito,T=1)
     if M.do_chart_update is None:
         M.diagonal = jit(lambda x,dts,dWt: integrate_sde(sde_diagonal,integrator,M.chart_update_diagonal,x[0],x[1],dts,dWt,jnp.sum(dts))[0:3])
     else:
-        M.diagonal = jit(lambda x,dts,dWt,ref_chart: integrate_sde(sde_diagonal,integrator,chart_update_diagonal,x[0],x[1],dts,dWt,jnp.sum(dts),ref_chart)[0:3])
+        M.diagonal = jit(lambda x,dts,dWt,ref_chart,*ys: integrate_sde(sde_diagonal,integrator,chart_update_diagonal,x[0],x[1],dts,dWt,jnp.sum(dts),ref_chart,*ys)[0:3])
 

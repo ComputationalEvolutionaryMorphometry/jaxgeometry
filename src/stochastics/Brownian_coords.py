@@ -25,18 +25,18 @@ def initialize(M):
     """ Brownian motion in coordinates """
 
     def sde_Brownian_coords(c,y):
-        t,x,chart = c
+        t,x,chart,s = c
         dt,dW = y
 
         gsharpx = M.gsharp((x,chart))
         X = jnp.linalg.cholesky(gsharpx)
-        det = -.5*jnp.einsum('kl,ikl->i',gsharpx,M.Gamma_g((x,chart)))
-        sto = jnp.tensordot(X,dW,(1,0))
-        return (det,sto,X)
+        det = -.5*(s**2)*jnp.einsum('kl,ikl->i',gsharpx,M.Gamma_g((x,chart)))
+        sto = s*jnp.tensordot(X,dW,(1,0))
+        return (det,sto,X,0.)
     
-    def chart_update_Brownian_coords(x,chart):
+    def chart_update_Brownian_coords(x,chart,*ys):
         if M.do_chart_update is None:
-            return (x,chart)
+            return (x,chart,*ys)
 
         update = M.do_chart_update(x)
         new_chart = M.centered_chart((x,chart))
@@ -47,8 +47,9 @@ def initialize(M):
                                 x),
                 jnp.where(update,
                                 new_chart,
-                                chart))
+                                chart),
+                *ys)
     
     M.sde_Brownian_coords = sde_Brownian_coords
     M.chart_update_Brownian_coords = chart_update_Brownian_coords
-    M.Brownian_coords = jit(lambda x,dts,dWs: integrate_sde(sde_Brownian_coords,integrator_ito,chart_update_Brownian_coords,x[0],x[1],dts,dWs))
+    M.Brownian_coords = jit(lambda x,dts,dWs,stdCov=1.: integrate_sde(sde_Brownian_coords,integrator_ito,chart_update_Brownian_coords,x[0],x[1],dts,dWs,stdCov)[0:3])

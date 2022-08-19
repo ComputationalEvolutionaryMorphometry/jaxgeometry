@@ -137,7 +137,7 @@ def integrator_stratonovich(sde_f,chart_update=None):
 
 def integrator_ito(sde_f,chart_update=None):
     if chart_update == None: # no chart update
-        chart_update = lambda xp,chart,cy: (xp,chart,*cy)
+        chart_update = lambda xp,chart,*cy: (xp,chart,*cy)
 
     def euler(c,y):
         t,x,chart,*cy = c

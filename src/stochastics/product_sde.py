@@ -28,18 +28,22 @@ def initialize(M,sde,chart_update,integrator=integrator_ito):
         t,x,chart,*cy = c
         dt,dW = y
         
-        (det,sto,X,*dcy) = jax.vmap(lambda x,chart,dW: sde((t,x,chart,*cy),(dt,dW)),0)(x,chart,dW)
+        (det,sto,X,*dcy) = jax.vmap(lambda x,chart,dW,*_cy: sde((t,x,chart,*_cy),(dt,dW)),0)(x,chart,dW,*cy)
 
         return (det,sto,X,*dcy)
-    
-    # note: y is not parametrized on product and thus cannot be updated by chart update
-    def chart_update_product(x,chart,*ys):
-        if M.do_chart_update is None:
-            return (x,chart,*ys)
 
-        return (*jax.vmap(lambda x,chart: chart_update(x,chart,*ys),0)(x,chart),*ys)
-    
-    M.sde_product = sde_product
-    M.chart_update_product = chart_update_product
-    M.product = jit(lambda x,dts,dWs: integrate_sde(sde_product,integrator,chart_update_product,x[0],x[1],dts,dWs))
+    chart_update_product = jax.vmap(chart_update)
 
+    product = jit(lambda x,dts,dWs,*cy: integrate_sde(sde_product,integrator,chart_update_product,x[0],x[1],dts,dWs,*cy))
+
+    return (product,sde_product,chart_update_product)
+
+# for initializing parameters
+def tile(x,N):
+    try:
+        return jnp.tile(x,(N,)+(1,)*x.ndim)
+    except AttributeError:
+        try:
+            return jnp.tile(x,N)
+        except TypeError:
+            return tuple([tile(y,N) for y in x])

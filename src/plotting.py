@@ -24,7 +24,8 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.ticker as ticker
 
-mpl.rcParams['figure.figsize'] = 12,12
+plt.rcParams['figure.figsize'] = 15,12
+#plt.rcParams['figure.dpi'] = 200
 
 from src.setup import * 
 from src.utils import * 
