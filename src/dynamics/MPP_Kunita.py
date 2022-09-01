@@ -35,8 +35,11 @@ def initialize(M,N,sigmas,u):
     metric.initialize(N)
 
     # scalar part of elliptic operator L = 1/2 \Delta_g + z
-    z = lambda x,qp: u(x,qp)+(jnp.einsum('ij,i->j',N.gsharp(x),gradx(N.logAbsDetsharp)(x))
-                              -2*jnp.einsum('...rj,...rii->j',sigmas(x[0]),jax.jacrev(sigmas)(x[0])) )
+    z = lambda x,qp: (u(x,qp)
+            -0.25*jnp.einsum('ij,i->j',N.gsharp(x),gradx(N.logAbsDetsharp)(x))
+            -0.5*jnp.einsum('iji->j',jacrevx(N.gsharp)(x))
+            +0.5*jnp.einsum('...rj,...rii->j',sigmas(x[0]),jax.jacrev(sigmas)(x[0]))
+            )
 
     # Onsager-Machlup deviation from geodesic energy
     # f = lambda x,qp: .5*jnp.einsum('rs,sr->',N.gsharp(x),
