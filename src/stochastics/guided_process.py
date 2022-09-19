@@ -84,13 +84,7 @@ def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,method='DelyonHu',inte
                            (T-tp1)),
                            lambda _: 0.,
                            None)
-        #t34 = jax.lax.cond(tp1<T-3*dt/2,
-        #                   lambda _: -(Af(xtp1chart,ytildetp1,ytildetp1,*cy)-Af(xchart,ytildetp1,ytildetp1,*cy)) / (
-        #                   (T-tp1)),
-        #                   lambda _: 0.,
-        #                   None)
-        #log_varphi = t2 + t34
-        log_varphi = t34
+        log_varphi = t2 + t34
 
         return (det+jnp.dot(X,h),sto,X,log_likelihood,log_varphi,jnp.zeros_like(T),jnp.zeros_like(v),*dcy)
     
