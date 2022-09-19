@@ -46,7 +46,7 @@ class Ellipsoid(EmbeddedManifold):
     def centered_chart(self,x):
         """ return centered coordinate chart """
         if type(x) == type(()): # coordinate tuple
-            return self.F(x)/self.params
+            return jax.lax.stop_gradient(self.F(x))/self.params
         else:
             return x/self.params # already in embedding space
 

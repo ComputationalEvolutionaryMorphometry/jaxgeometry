@@ -37,8 +37,10 @@ class Manifold(object):
         return jnp.zeros(1) 
 
     def centered_chart(self,coords):
-        """ return centered coordinate chart. Must be implemented by inheriting classes """
-        return jnp.zeros(1)
+        """ return centered coordinate chart. Must be implemented by inheriting classes 
+        Generally wish to stop gradient computations through the chart choice
+        """
+        return jax.lax.stop_gradient(jnp.zeros(1))
 
     def coords(self,coords=None,chart=None):
         """ return coordinate representation of point in manifold """

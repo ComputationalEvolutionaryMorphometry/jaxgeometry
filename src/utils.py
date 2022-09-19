@@ -53,6 +53,19 @@ def jacrevx(f):
 def hessianx(f):
     return jacfwdx(jacrevx(f))
 
+# evaluation with pass through derivatives
+def straight_through(f,x,*ys):
+    # Create an exactly-zero expression with Sterbenz lemma that has
+    # an exactly-one gradient.
+    if type(x) == type(()):
+        zeros = tuple([xi - jax.lax.stop_gradient(xi) for xi in x])
+        fx = jax.lax.stop_gradient(f(x,*ys))
+        return tuple([fxi - jax.lax.stop_gradient(fxi) for fxi in fx])
+    else:
+        zero = x - jax.lax.stop_gradient(x)
+        return zeros + jax.lax.stop_gradient(f(x,*ys))
+
+
 # time increments, deterministic
 def dts(T=T,n_steps=n_steps):
     return jnp.array([T/n_steps]*n_steps)

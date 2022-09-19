@@ -29,9 +29,9 @@ def initialize(M):
         dt,dW = y
 
         gsharpx = M.gsharp((x,chart))
-        X = jnp.linalg.cholesky(gsharpx)
+        X = s*jnp.linalg.cholesky(gsharpx)
         det = -.5*(s**2)*jnp.einsum('kl,ikl->i',gsharpx,M.Gamma_g((x,chart)))
-        sto = s*jnp.tensordot(X,dW,(1,0))
+        sto = jnp.tensordot(X,dW,(1,0))
         return (det,sto,X,0.)
     
     def chart_update_Brownian_coords(x,chart,*ys):

@@ -210,10 +210,7 @@ class landmarks(Manifold):
                     elif self.m == 3:
                         ax.plot(xx[:,0],xx[:,1],xx[:,2],linewidth=linewidth,color=color)
                 except:
-                    if self.m == 2:
-                        plt.scatter(x[j,0],x[j,1],color=color,s=markersize)
-                    elif self.m == 3:
-                        ax.scatter(x[j,0],x[j,1],x[j,2],color=color,s=markersize if markersize else 50)
+                    pass
 
             try:
                 #if not self.std_basis:

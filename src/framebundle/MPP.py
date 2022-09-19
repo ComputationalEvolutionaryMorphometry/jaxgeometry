@@ -21,7 +21,7 @@
 from src.setup import *
 from src.utils import *
 
-from jax.experimental import optimizers
+from jax.example_libraries import optimizers
 
 # frame bundle most probable paths. System by Erlend Grong
 # notation mostly follows Anisotropic covariance on manifolds and most probable paths,

@@ -38,7 +38,11 @@ class Cylinder(EmbeddedManifold):
 
     def centered_chart(self,x):
         """ return centered coordinate chart """
-        return self.invF((self.F(x),self.chart()))  # chart centered at coords
+        if type(x) == type(()): # coordinate tuple
+            Fx = jax.lax.stop_gradient(self.F(x))
+        else:
+            Fx = x # already in embedding space
+        return self.invF((Fx,self.chart()))  # chart centered at coords
 
     def get_B(self,v):
         """ R^3 basis with first basis vector v """

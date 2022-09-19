@@ -20,7 +20,7 @@
 from src.setup import *
 
 from scipy.optimize import minimize
-from jax.experimental import optimizers
+from jax.example_libraries import optimizers
 
 def initialize(M,Exp=None):
 
