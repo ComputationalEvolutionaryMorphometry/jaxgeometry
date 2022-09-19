@@ -37,9 +37,8 @@ Start jupyter notebook
 ```
 jupyter notebook
 ```
-or, if you are using the multiprocess parallellization
-```
-export OMP_NUM_THREADS=1; jupyter notebook
-```
 
 Your browser should now open with a list of the Jax Geometry notebooks in the main folder.
+
+### Why Jax? ###
+Some good discussions about the architectural differences between autodiff frameworks: https://www.assemblyai.com/blog/why-you-should-or-shouldnt-be-using-jax-in-2022/ and http://www.stochasticlifestyle.com/engineering-trade-offs-in-automatic-differentiation-from-tensorflow-and-pytorch-to-jax-and-julia/
