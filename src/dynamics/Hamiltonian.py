@@ -25,8 +25,8 @@ from src.utils import *
 # geodesic integration, Hamiltonian form                      #
 ###############################################################
 def initialize(M):
-    dq = jit(grad(M.H,argnums=1))
-    dp = jit(lambda q,p: -gradx(M.H)(q,p))
+    dq = grad(M.H,argnums=1)
+    dp = lambda q,p: -gradx(M.H)(q,p)
     
     def ode_Hamiltonian(c,y):
         t,x,chart = c
@@ -52,7 +52,7 @@ def initialize(M):
                             new_chart,
                             chart))
     
-    M.Hamiltonian_dynamics = jit(lambda q,p,dts: integrate(ode_Hamiltonian,chart_update_Hamiltonian,jnp.stack((q[0],p)),q[1],dts))
+    M.Hamiltonian_dynamics = jit(lambda q,p,dts: integrate(ode_Hamiltonian,chart_update_Hamiltonian,jnp.stack((q[0] if type(q)==type(()) else q,p)),q[1] if type(q)==type(()) else None,dts))
     
     def Exp_Hamiltonian(q,p,T=T,n_steps=n_steps):
         curve = M.Hamiltonian_dynamics(q,p,dts(T,n_steps))

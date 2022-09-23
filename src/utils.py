@@ -120,7 +120,7 @@ def integrate(ode,chart_update,x,chart,dts,*ys):
     _,xs = lax.scan(integrator(ode,chart_update),
             (0.,x,chart),
             (dts,*ys))
-    return xs
+    return xs if chart_update is not None else xs[0:2]
 
 # sde functions should return (det,sto,Sigma) where
 # det is determinisitc part, sto is stochastic part,
