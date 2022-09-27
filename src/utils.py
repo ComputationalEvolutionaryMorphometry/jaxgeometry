@@ -17,7 +17,6 @@
 # along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 from src.setup import *
 from src.params import *
 
@@ -135,7 +134,7 @@ def integrate_sde(sde,integrator,chart_update,x,chart,dts,dWs,*cy):
 
 def integrator_stratonovich(sde_f,chart_update=None):
     if chart_update == None: # no chart update
-        chart_update = lambda xp,chart,cy: (xp,chart,*cy)
+        chart_update = lambda xp,chart,*cy: (xp,chart,*cy)
 
     def euler_heun(c,y):
         t,x,chart,*cy = c

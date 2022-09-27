@@ -17,7 +17,6 @@
 # along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 from src.setup import *
 from src.params import *
 
@@ -63,7 +62,14 @@ class SON(LieGroup):
             expm = jnp.real(jnp.tensordot(V,jnp.tensordot(jnp.diag(jnp.exp(w)),jnp.conj(V.T),(1,0)),(1,0)))
             return expm
         self.Expm = Expm
-        self.Logm = lambda g : linalg.Logm()(g)#to_group(g))
+        def logm(b):
+            I = jnp.eye(b.shape[0])
+            res = jnp.zeros_like(b)
+            ITERATIONS = 20
+            for k in range(1, ITERATIONS):
+                res += pow(-1, k+1) * jnp.linalg.matrix_power(b-I, k)/k
+            return res
+        self.Logm = logm
 
         super(SON,self).initialize()
 

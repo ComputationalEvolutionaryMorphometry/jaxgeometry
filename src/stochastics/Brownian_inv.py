@@ -21,27 +21,19 @@ from src.setup import *
 from src.utils import *
 
 def initialize(G):
-    """ Lie-Poisson geodesic integration """
+    """ Brownian motion with respect to left/right invariant metric """
 
     assert(G.invariance == 'left')
 
-    def ode_LP(c,y):
-        t,mu,_ = c
-        dmut = G.coad(G.dHminusdmu(mu),mu)
-        return dmut
-    G.LP = lambda mu,_dts=None: integrate(ode_LP,None,mu,None,dts() if _dts is None else _dts)
+    def sde_Brownian_inv(c,y):
+        t,g,_,sigma = c
+        dt,dW = y
 
-    # reconstruction
-    def ode_LPrec(c,y):
-        t,g,_ = c
-        mu, = y
-        dgt = G.dL(g,G.e,G.VtoLA(G.dHminusdmu(mu)))
-        return dgt
-    G.LPrec = lambda g,mus,_dts=None: integrate(ode_LPrec,None,g,None,dts() if _dts is None else _dts,mus)
+        X = jnp.tensordot(G.invpf(g,G.eiLA),sigma,(2,0))
+        det = -.5*jnp.tensordot(jnp.diagonal(G.C,0,2).sum(1),X,(0,2))
+        sto = jnp.tensordot(X,dW,(2,0))
+        return (det,sto,X,jnp.zeros_like(sigma))
 
-    ### geodesics
-    G.coExpLP = lambda g,mu: G.LPrec(g,G.LP(mu)[1])[1][-1]
-    G.ExpLP = lambda g,v: G.coExpLP(g,G.flatV(v))
-    G.coExpLPt = lambda g,mu: G.LPrec(g,G.LP(mu)[1])
-    G.ExpLPt = lambda g,v: G.coExpLPt(g,G.flatV(v))
-    G.DcoExpLP = lambda g,mu: jax.jacrev(G.coExp)(g,mu)
+    G.sde_Brownian_inv = sde_Brownian_inv
+    G.Brownian_inv = lambda g,dts,dWt,sigma=jnp.eye(G.dim): integrate_sde(G.sde_Brownian_inv,integrator_stratonovich,None,g,None,dts,dWt,sigma)[0:3]
+

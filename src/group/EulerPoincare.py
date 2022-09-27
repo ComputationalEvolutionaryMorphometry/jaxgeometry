@@ -17,7 +17,6 @@
 # along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 from src.setup import *
 from src.utils import *
 
@@ -36,7 +35,7 @@ def initialize(G):
     # reconstruction
     def ode_EPrec(c,y):
         t,g,_ = c
-        (dt,mu), = y
+        mu, = y
         xi = G.invFl(mu)
         dgt = G.dL(g,G.e,G.VtoLA(xi))
         return dgt
@@ -46,7 +45,7 @@ def initialize(G):
     G.coExpEP = lambda g,mu: G.EPrec(g,G.EP(mu)[1])[1][-1]
     G.ExpEP = lambda g,v: G.coExpEP(g,G.flatV(v))
     G.ExpEPpsi = lambda q,v: G.ExpEP(G.psi(q),G.flatV(v))
-    G.coExpEPt = lambda g,mu: G.EPrec(g,G.EP(mu))
+    G.coExpEPt = lambda g,mu: G.EPrec(g,G.EP(mu)[1])
     G.ExpEPt = lambda g,v: G.coExpEPt(g,G.flatV(v))
     G.ExpEPpsit = lambda q,v: G.ExpEPt(G.psi(q),G.flatV(v))
     G.DcoExpEP = lambda g,mu: jax.jaxrev(G.coExpEP)(g,mu)

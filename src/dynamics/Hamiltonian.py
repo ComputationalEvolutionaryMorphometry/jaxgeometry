@@ -17,7 +17,6 @@
 # along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 from src.setup import *
 from src.utils import *
 

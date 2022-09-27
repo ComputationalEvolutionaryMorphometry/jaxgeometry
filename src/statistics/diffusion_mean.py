@@ -18,6 +18,7 @@
 #
 
 from src.setup import *
+from src.params import *
 
 # Delyon/Hu guided process
 from src.stochastics.guided_process import *
@@ -28,11 +29,12 @@ def initialize(M):
 
     # guide function
     phi = lambda q,v,s: jnp.tensordot((1/s)*jnp.linalg.cholesky(M.g(q)).T,M.StdLog(q,M.F((v,q[1]))).flatten(),(1,0))
-    A = lambda x,s: (s**(-2))*M.g(x)
+    A = lambda x,v,w,s: (s**(-2))*jnp.dot(v,jnp.dot(M.g(x),w))
+    logdetA = lambda x,s: jnp.linalg.slogdet(s**(-2)*M.g(x))[1]
     
     (Brownian_coords_guided,sde_Brownian_coords_guided,chart_update_Brownian_coords_guided,log_p_T,neg_log_p_Ts) = get_guided(
         M,M.sde_Brownian_coords,M.chart_update_Brownian_coords,phi,
-        sqrtCov=lambda x,s: s*jnp.linalg.cholesky(M.gsharp(x)),A=A)
+        lambda x,s: s*jnp.linalg.cholesky(M.gsharp(x)),A,logdetA)
 
     # optimization setup
     N = 1 # bridge samples per datapoint

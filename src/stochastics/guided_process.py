@@ -17,7 +17,6 @@
 # along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 from src.setup import *
 from src.utils import *
 
@@ -26,7 +25,7 @@ from src.utils import *
 #######################################################################
 
 # hit target v at time t=Tend
-def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,method='DelyonHu',integration='ito'):
+def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,logdetA=None,method='DelyonHu',integration='ito'):
     """ guided diffusions """
 
     def sde_guided(c,y):
@@ -48,7 +47,7 @@ def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,method='DelyonHu',inte
 
         ### likelihood
         dW_guided = (1-.5*dt/(1-t))*dW+dt*h  # for Ito as well?
-        sqrtCovx = sqrtCov(xchart,*cy)
+        sqrtCovx = sqrtCov(xchart,*cy) if sqrtCov is not None else X
         Cov = dt*jnp.tensordot(sqrtCovx,sqrtCovx,(1,1))
         Pres = jnp.linalg.inv(Cov)
         residual = jnp.tensordot(dW_guided,jnp.linalg.solve(Cov,dW_guided),(0,0))
@@ -69,8 +68,8 @@ def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,method='DelyonHu',inte
         ytildetp1 = jax.lax.stop_gradient(jnp.tensordot(Xtp1,phi(xtp1chart,v,*cy),1)) # to avoid NaNs in gradient
 
         # set default A if not specified
-        Af = lambda x,v,w,*args: jnp.dot(v,jnp.dot(A(x,*args),w)) if A != None else \
-             lambda x,v,w,*args: jnp.dot(v,jnp.dot(jnp.linalg.solve(jnp.tensordot(X,X,(1,1))),w))
+        Af = A if A != None else \
+             lambda x,v,w,*args: jnp.dot(v,jnp.linalg.solve(jnp.tensordot(X,X,(1,1)),w))
 
         #     add t1 term for general phi
         #     dxbdxt = theano.gradient.Rop((Gx-x[0]).flatten(),x[0],dx[0]) # use this for general phi
@@ -96,7 +95,7 @@ def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,method='DelyonHu',inte
         v_new = M.update_coords((v,chart),chart_new)[0]
         return (x_new,chart_new,log_likelihood,log_varphi,T,v_new,*ys_new)
     
-    guided = jit(lambda x,v,dts,dWs,*ys: integrate_sde(sde_guided,integrator_ito,chart_update_guided,x[0],x[1],dts,dWs,0.,0.,jnp.sum(dts),M.update_coords(v,x[1])[0],*ys)[0:5])
+    guided = jit(lambda x,v,dts,dWs,*ys: integrate_sde(sde_guided,integrator_ito if integration == 'ito' else integrator_stratonovich,chart_update_guided,x[0],x[1],dts,dWs,0.,0.,jnp.sum(dts),M.update_coords(v,x[1])[0] if chart_update else v,*ys)[0:5])
    
     def _log_p_T(guided,A,phi,x,v,dW,dts,*ys):
         """ Monte Carlo approximation of log transition density from guided process """
@@ -108,7 +107,8 @@ def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,method='DelyonHu',inte
         log_varphis = jax.vmap(lambda dW: guided(x,v,dts,dW,*ys)[4][-1],1)(dW)
         
         log_varphi = jnp.log(jnp.mean(jnp.exp(log_varphis)))
-        log_p_T = .5*jnp.linalg.slogdet(A(x,*ys))[1]-.5*x[0].shape[0]*jnp.log(2.*jnp.pi*T)-Cxv/(2.*T)+log_varphi
+        _logdetA = logdetA(x,*ys) if logdetA is not None else -2*jnp.linalg.slogdet(X)[1]
+        log_p_T = .5*_logdetA-.5*x[0].shape[0]*jnp.log(2.*jnp.pi*T)-Cxv/(2.*T)+log_varphi
         return log_p_T
     log_p_T = partial(_log_p_T,guided,A,phi)
 

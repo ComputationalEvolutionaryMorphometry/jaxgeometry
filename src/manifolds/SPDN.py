@@ -1,20 +1,20 @@
-# # This file is part of Theano Geometry
+## This file is part of Jax Geometry
 #
-# Copyright (C) 2017, Stefan Sommer (sommer@di.ku.dk)
-# https://bitbucket.org/stefansommer/theanogemetry
+# Copyright (C) 2021, Stefan Sommer (sommer@di.ku.dk)
+# https://bitbucket.org/stefansommer/jaxgeometry
 #
-# Theano Geometry is free software: you can redistribute it and/or modify
+# Jax Geometry is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Theano Geometry is distributed in the hope that it will be useful,
+# Jax Geometry is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
+# along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
 from src.setup import *
@@ -30,35 +30,20 @@ class SPDN(EmbeddedManifold):
     """ manifold of symmetric positive definite matrices """
 
     def __init__(self,N=3):
-        EmbeddedManifold.__init__(self)
-        self.N = constant(N)
-        self.dim = constant(N*(N+1)//2)
-        self.emb_dim = constant(N*N)
+        self.N = N
+        dim = N*(N+1)//2
+        emb_dim = N*N
+        EmbeddedManifold.__init__(self,dim=dim,emb_dim=emb_dim)
 
-        x = self.sym_element()
-        g = T.matrix() # \RR^{NxN} matrix
-        gs = T.tensor3() # sequence of \RR^{NxN} matrices
-        def act(g,q):
-            if g.type == T.matrix().type:
-                return T.tensordot(g,T.tensordot(q.reshape((N,N)),g,(1,1)),(1,0)).flatten()
-            elif g.type == T.tensor3().type: # list of matrices
-                (cout, updates) = theano.scan(fn=lambda g,x: T.tensordot(g,T.tensordot(q.reshape((N,N)),g,(1,1)),(1,0)),
-                outputs_info=[T.eye(N)],
-                sequences=[g])
-
-                return cout.reshape((-1,N*N))
-            else:
-                assert(False)
-        self.act = act
-        self.actf = theano.function([g,x], act(g,x))
-        self.actsf = theano.function([gs,x], act(gs,x))
+        self.act = lambda g,q: jnp.tensordot(g,jnp.tensordot(q.reshape((N,N)),g,(1,1)),(1,0)).flatten()
+        self.acts = jax.vmap(self.act,(0,None))
 
     def __str__(self):
-        return "SPDN(%d), dim %d" % (self.N.eval(),self.dim.eval())
+        return "SPDN(%d), dim %d" % (self.N,self.dim)
 
 
     def plot(self, rotate=None, alpha = None):
-        ax = plt.gca(projection='3d')
+        ax = plt.gca()
         #ax.set_aspect("equal")
         if rotate != None:
             ax.view_init(rotate[0],rotate[1])
@@ -78,11 +63,11 @@ class SPDN(EmbeddedManifold):
         return
 
     def plotx(self, x,color_intensity=1.,color=None,linewidth=3.,prevx=None,ellipsoid=None,i=None,maxi=None):
-        x = x.reshape((self.N.eval(),self.N.eval()))
+        x = x.reshape((self.N,self.N))
         (w,V) = np.linalg.eigh(x)
         s = np.sqrt(w[np.newaxis,:])*V # scaled eigenvectors
         if prevx is not None:
-            prevx = prevx.reshape((self.N.eval(),self.N.eval()))
+            prevx = prevx.reshape((self.N,self.N))
             (prevw,prevV) = np.linalg.eigh(prevx)
             prevs = np.sqrt(prevw[np.newaxis,:])*prevV # scaled eigenvectors
             ss = np.stack((prevs,s))
