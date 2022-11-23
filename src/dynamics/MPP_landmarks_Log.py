@@ -22,31 +22,33 @@ from src.setup import *
 from src.utils import *
 
 ###############################################################
-# Most probable paths for Kunita flows - BVP                  # 
+# Most probable paths for landmarks via development - BVP     # 
 ###############################################################
-def initialize(M,N):
+def initialize(M):
     method='BFGS'
 
-    def loss(x,v,y,qps,dqps,_dts):
-        (_,xx1,charts) = M.MPP_AC(x,v,qps,dqps,_dts)
-        (x1,chart1) = (xx1[-1,0],charts[-1])
+    def loss(x,lambd,y,qps,_dts):
+        (_,xs,_,charts) = M.MPP_landmarks(x,lambd,qps,_dts)
+        (x1,chart1) = (xs[-1],charts[-1])
         y_chart1 = M.update_coords(y,chart1)
-        return 1./N.dim*jnp.sum(jnp.square(x1 - y_chart1[0]))
-    from scipy.optimize import approx_fprime
-    dloss = lambda x,v,y,qps,dqps,_dts: approx_fprime(v,lambda v: loss(x,v,y,qps,dqps,_dts),1e-4)
+        return 1./M.dim*jnp.sum(jnp.square(x1 - y_chart1[0]))
+    #dloss = jax.grad(loss,1)
+    #from scipy.optimize import approx_fprime
+    #dloss = lambda x,lambd,y,qps,_dts: approx_fprime(lambd,lambda lambd: loss(x,lambd,y,qps,_dts),1e-4)
 
     from scipy.optimize import minimize,fmin_bfgs,fmin_cg
-    def shoot(x,y,qps,dqps,_dts,v0=None):        
+    def shoot(x,y,qps,_dts,lambd0=None):        
 
-        if v0 is None:
-            v0 = jnp.zeros(N.dim)
+        if lambd0 is None:
+            lambd0 = jnp.zeros(M.dim)
 
-        #res = minimize(jax.value_and_grad(lambda w: loss(x,w,y,qps,dqps,_dts)), v0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
-        res = minimize(lambda w: (loss(x,w,y,qps,dqps,_dts),dloss(x,w,y,qps,dqps,_dts)), v0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
-    #     res = minimize(lambda w: loss(x,w,y,qps,dqps,_dts), v0, method=method, jac=False, options={'disp': False, 'maxiter': 100})
+        res = minimize(jax.value_and_grad(lambda w: loss(x,w,y,qps,_dts)), lambd0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
+        #res = minimize(lambda w: (loss(x,w,y,qps,_dts),dloss(x,w,y,qps,_dts)), lambd0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
+    #     res = minimize(lambda w: loss(x,w,y,qps,_dts), lambd0, method=method, jac=False, options={'disp': False, 'maxiter': 100})
 
-    #     print(res)
+        res.hess_inv = None
+        print(res)
 
         return (res.x,res.fun)
 
-    M.Log_MPP_AC = shoot
+    M.Log_MPP_landmarks = shoot

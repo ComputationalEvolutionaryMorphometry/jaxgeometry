@@ -142,7 +142,7 @@ class LieGroup(EmbeddedManifold):
         ## actions
         self.Ad = lambda g,xi: self.dR(self.inv(g),g,self.dL(g,self.e,xi))
         self.ad = lambda xi,eta: self.bracket(xi,eta)
-        self.coad = lambda p,pp: jnp.tensordot(jnp.tensordot(self.C,p,(0,0)),pp,(1,0)) # TODO: check this
+        self.coad = lambda v,p: jnp.tensordot(jnp.tensordot(self.C,v,(0,0)),p,(1,0))
 
         ## invariance
         if self.invariance == 'left':

@@ -31,7 +31,7 @@ def initialize(G,_sigma=None):
 
     G.sqrtA = lambda sigma=_sigma: G.inv(sigma) # square root metric
     G.A = lambda sigma=_sigma: jnp.tensordot(G.sqrtA(sigma),G.sqrtA(sigma),(0,0)) # metric
-    G.W = lambda sigma=_sigma: G.inv(G.A(sigma)) # covariance (cometric)
+    G.W = lambda sigma=_sigma: jnp.tensordot(sigma,sigma,(1,1)) # covariance (cometric)
     def gV(v=None,w=None,sigma=_sigma):
         if v is None and w is None:
             return G.A(sigma)

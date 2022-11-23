@@ -59,7 +59,7 @@ class Ellipsoid(EmbeddedManifold):
         return jnp.stack((b1,b2,b3),axis=1)
 
     # Logarithm with standard Riemannian metric on S^2
-    def StdLog(self, x,y):
+    def StdLogEmb(self, x,y):
         y = y/self.params # from ellipsoid to S^2
         proj = lambda x,y: jnp.dot(x,y)*x
         Fx = self.F(x)/self.params
@@ -70,7 +70,10 @@ class Ellipsoid(EmbeddedManifold):
                          lambda _: theta/normv*v,
                          lambda _: jnp.zeros_like(v),
                          None)
-        return jnp.dot(self.invJF((Fx,x[1])),self.params*w)
+        return self.params*w
+    def StdLog(self, x,y):
+        Fx = self.F(x)/self.params
+        return jnp.dot(self.invJF((Fx,x[1])),self.StdLogEmb(x,y))
 
     def __init__(self,params=np.array([1.,1.,1.]),chart_center='z',use_spherical_coords=False):
         self.params = jnp.array(params) # ellipsoid parameters (e.g. [1.,1.,1.] for sphere)
