@@ -24,7 +24,7 @@ from src.utils import *
 ###############################################################
 # Most probable paths for landmarks via development           #
 ###############################################################
-def initialize(M,sigmas,a):
+def initialize(M,sigmas,dsigmas,a):
     """ Most probable paths for Kunita flows                 """
     """ M: shape manifold, a: flow field                     """
     
@@ -35,10 +35,12 @@ def initialize(M,sigmas,a):
         lambd = xlambd[1].reshape((M.N,M.m))
         
         sigmasx = sigmas(x)
+        dsigmasx = dsigmas(x)
         c = jnp.einsum('ri,rai->a',lambd,sigmasx)
 
         dx = a(x,qp)+jnp.einsum('a,rak->rk',c,sigmasx)
-        dlambd = -jnp.einsum('ri,a,rairk->rk',lambd,c,jacrev(sigmas)(x))-jnp.einsum('ri,rirk->rk',lambd,jacrev(a)(x,qp))
+        #dlambd = -jnp.einsum('ri,a,rairk->rk',lambd,c,jacrev(sigmas)(x))-jnp.einsum('ri,rirk->rk',lambd,jacrev(a)(x,qp))
+        dlambd = -jnp.einsum('ri,a,raik->rk',lambd,c,dsigmasx)-jnp.einsum('ri,rirk->rk',lambd,jacrev(a)(x,qp))
         return jnp.stack((dx.flatten(),dlambd.flatten()))
 
     def chart_update_MPP_landmarks(xlambd,chart,y):

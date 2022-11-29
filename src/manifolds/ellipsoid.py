@@ -145,7 +145,7 @@ class Ellipsoid(EmbeddedManifold):
             ax.plot_surface(x, y, z, color=cm.jet(0.), alpha=alpha)
 
 
-    def plot_field(self, field,lw=.3):
+    def plot_field(self, field,lw=.3, scale=1.):
         ax = plt.gca()
         x = np.arange(-10,10,1)
         ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
@@ -178,4 +178,4 @@ class Ellipsoid(EmbeddedManifold):
                 chart = self.centered_chart(Fx)
                 xcoord = self.invF((Fx,chart))
                 v = field((xcoord,chart))
-                self.plotx((xcoord,chart),v=v)
+                self.plotx((xcoord,chart),v=scale*v)

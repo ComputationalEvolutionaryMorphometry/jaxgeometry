@@ -32,9 +32,6 @@ def initialize(M):
         (x1,chart1) = (xs[-1],charts[-1])
         y_chart1 = M.update_coords(y,chart1)
         return 1./M.dim*jnp.sum(jnp.square(x1 - y_chart1[0]))
-    #dloss = jax.grad(loss,1)
-    #from scipy.optimize import approx_fprime
-    #dloss = lambda x,lambd,y,qps,_dts: approx_fprime(lambd,lambda lambd: loss(x,lambd,y,qps,_dts),1e-4)
 
     from scipy.optimize import minimize,fmin_bfgs,fmin_cg
     def shoot(x,y,qps,_dts,lambd0=None):        
@@ -43,11 +40,6 @@ def initialize(M):
             lambd0 = jnp.zeros(M.dim)
 
         res = minimize(jax.value_and_grad(lambda w: loss(x,w,y,qps,_dts)), lambd0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
-        #res = minimize(lambda w: (loss(x,w,y,qps,_dts),dloss(x,w,y,qps,_dts)), lambd0, method=method, jac=True, options={'disp': False, 'maxiter': 100})
-    #     res = minimize(lambda w: loss(x,w,y,qps,_dts), lambd0, method=method, jac=False, options={'disp': False, 'maxiter': 100})
-
-        res.hess_inv = None
-        print(res)
 
         return (res.x,res.fun)
 
