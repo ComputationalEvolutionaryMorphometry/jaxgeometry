@@ -92,44 +92,35 @@ def plot_density_estimate(M, obss, alpha=.2, limits=None, border=1.5, bandwidth=
         plt.colorbar(m, shrink=0.7)
 
 
-#### Spherical plotting functions
-# plot general function on S2
-def plot_sphere_f(M, f, alpha=.2, pts=100, cmap = cm.jet, parallel=False, vmin=None, colorbar=True, border = 1e-2):
+#### plotting functions
+# plot general function on M
+def plot_f(M, f, F, minx, maxx, miny, maxy, alpha=.2, pts=100, cmap = cm.jet, vmin=None, vmax=None, colorbar=True):
         # grids        
-        phi, theta = np.meshgrid(np.linspace(0.,2.*np.pi-border,pts),np.linspace(np.pi/2-border,-np.pi/2+border,pts))
-        phitheta = np.vstack([phi.ravel(), theta.ravel()]).T
-        xs = np.apply_along_axis(M.F_sphericalf,1,phitheta)
+        phi, theta = jnp.meshgrid(np.linspace(minx,maxx,pts),np.linspace(miny,maxy,pts))
+        phitheta = jnp.vstack([phi.ravel(), theta.ravel()]).T
+        xs = jax.vmap(F)(phitheta)
         X = xs[:,0].reshape(phi.shape)
         Y = xs[:,1].reshape(phi.shape)
         Z = xs[:,2].reshape(phi.shape)
         
         # plot
         ax = plt.gca()
-        if not parallel:
-            fs = np.apply_along_axis(f,1,xs)
-        else:
-            try:
-                pf = lambda pars: (f(pars[0]),) # wrapped f for parallel execution
-                mpu.openPool()
-                sol = mpu.pool.imap(pf,mpu.inputArgs(xs,))
-                res = list(sol)
-                fs = mpu.getRes(res,0)
-            except:
-                mpu.closePool()
-                raise
-            else:
-                mpu.closePool()
-        if vmin is None:
+        fs = jax.vmap(f,0)(xs)
+        if vmin is None or vmax is None:
             norm = mpl.colors.Normalize()
             norm.autoscale(fs)
         else:
-            norm = mpl.colors.Normalize(vmin=vmin,vmax=np.max(fs))
+            norm = mpl.colors.Normalize(vmin=vmin if vmin is not None else np.min(fs),vmax=vmax if vmax is not None else np.max(fs))
         colors = cmap(norm(fs)).reshape(phi.shape+(4,))
         surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, facecolors = colors, linewidth=0., antialiased=True, alpha=alpha, edgecolor=(0,0,0,0), shade=False)
         m = cm.ScalarMappable(cmap=surf.cmap,norm=norm)
         m.set_array(colors)
         if colorbar:
-            plt.colorbar(m, shrink=0.7)
+            plt.colorbar(m, ax=ax, shrink=0.7)
+
+def plot_sphere_f(M, f, alpha=.2, pts=100, cmap = cm.jet, vmin=None, vmax=None, colorbar=True, border = 1e-2):
+    return plot_f(M, f, M.F_spherical, 0., 2.*np.pi, np.pi/2-border, -np.pi/2+border, alpha=alpha, pts=pts, cmap = cmap, vmin=vmin, vmax=vmax, colorbar=colorbar)
+
 
 # plot density estimate using spherical coordinates
 def plot_sphere_density_estimate(M, obss_M, alpha=.2, bandwidth=0.08, pts=100, cmap = cm.jet):
@@ -142,7 +133,7 @@ def plot_sphere_density_estimate(M, obss_M, alpha=.2, bandwidth=0.08, pts=100, c
         # grids
         phi, theta = np.meshgrid(np.linspace(0.,2.*np.pi,pts),np.linspace(-np.pi/2,np.pi/2,pts))
         phitheta = np.vstack([phi.ravel(), theta.ravel()]).T
-        xs = np.apply_along_axis(M.F_sphericalf,1,phitheta)
+        xs = np.apply_along_axis(M.F_spherical,1,phitheta)
         X = xs[:,0].reshape(phi.shape)
         Y = xs[:,1].reshape(phi.shape)
         Z = xs[:,2].reshape(phi.shape)

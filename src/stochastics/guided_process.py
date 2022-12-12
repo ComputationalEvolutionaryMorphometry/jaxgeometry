@@ -107,6 +107,7 @@ def get_guided(M,sde,chart_update,phi,sqrtCov=None,A=None,logdetA=None,method='D
         log_varphis = jax.vmap(lambda dW: guided(x,v,dts,dW,*ys)[4][-1],1)(dW)
         
         log_varphi = jnp.log(jnp.mean(jnp.exp(log_varphis)))
+        #(_,_,X,*_) = sde((T,v,chart,*cy),y)
         _logdetA = logdetA(x,*ys) if logdetA is not None else -2*jnp.linalg.slogdet(X)[1]
         log_p_T = .5*_logdetA-.5*x[0].shape[0]*jnp.log(2.*jnp.pi*T)-Cxv/(2.*T)+log_varphi
         return log_p_T
