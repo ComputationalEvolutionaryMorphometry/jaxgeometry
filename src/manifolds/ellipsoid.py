@@ -110,7 +110,7 @@ class Ellipsoid(EmbeddedManifold):
     def newfig(self):
         newfig3d()
 
-    def plot(self,rotate=None,alpha=None,lw=0.3):
+    def plot(self,rotate=None,alpha=None,lw=0.3,color='gray',scale=1.):
         ax = plt.gca()
         x = np.arange(-10,10,1)
         ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
@@ -136,13 +136,13 @@ class Ellipsoid(EmbeddedManifold):
     #    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
         #draw ellipsoid
         u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-        x=self.params[0]*np.cos(u)*np.sin(v)
-        y=self.params[1]*np.sin(u)*np.sin(v)
-        z=self.params[2]*np.cos(v)
-        ax.plot_wireframe(x, y, z, color='gray', alpha=0.5)
+        x=scale*self.params[0]*np.cos(u)*np.sin(v)
+        y=scale*self.params[1]*np.sin(u)*np.sin(v)
+        z=scale*self.params[2]*np.cos(v)
+        ax.plot_wireframe(x, y, z, color=color, alpha=0.5)
     
         if alpha is not None:
-            ax.plot_surface(x, y, z, color=cm.jet(0.), alpha=alpha)
+            ax.plot_surface(x, y, z, color=color, alpha=alpha)
 
 
     def plot_field(self, field,lw=.3, scale=1.):

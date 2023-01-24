@@ -75,6 +75,7 @@ def initialize(M,truncate_high_order_derivatives=False):
     # Inner Product from g
     M.dot = lambda x,v,w: jnp.tensordot(jnp.tensordot(M.g(x),w,(1,0)),v,(0,0))
     M.norm = lambda x,v: jnp.sqrt(M.dot(x,v,v))
+    M.norm2 = lambda x,v: M.dot(x,v,v)
     M.dotsharp = lambda x,p,pp: jnp.tensordot(jnp.tensordot(M.gsharp(x),pp,(1,0)),p,(0,0))
     M.conorm = lambda x,p: jnp.sqrt(M.dotsharp(x,p,p))
 
@@ -87,6 +88,6 @@ def initialize(M,truncate_high_order_derivatives=False):
 
     # gradient, divergence, and Laplace-Beltrami
     M.grad = lambda x,f: M.sharp(x,gradx(f)(x))
-    M.div = lambda x,X: jnp.trace(jacfwdx(X)(x))+.5*jnp.dot(X(x),gradx(M.linalg.logAbsDet)(x))
+    M.div = lambda x,X: jnp.trace(jacfwdx(X)(x))+.5*jnp.dot(X(x),gradx(M.logAbsDet)(x))
     M.divsharp = lambda x,X: jnp.trace(jacfwdx(X)(x))-.5*jnp.dot(X(x),gradx(M.logAbsDetsharp)(x))
     M.Laplacian = lambda x,f: M.div(x,lambda x: M.grad(x,f))

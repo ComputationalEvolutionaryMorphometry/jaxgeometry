@@ -168,7 +168,8 @@ class EmbeddedManifold(Manifold):
     
         if v is not None:
             if i in v_steps:
-                v = np.dot(self.JF(x), v)
+                if not v.shape[0] == self.emb_dim:
+                    v = np.dot(self.JF(x), v)
                 ax.quiver(Fx[0], Fx[1], Fx[2], v[0], v[1], v[2],
                           pivot='tail',
                           arrow_length_ratio = 0.15, linewidths=linewidth, length=0.5,

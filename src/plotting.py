@@ -106,17 +106,23 @@ def plot_f(M, f, F, minx, maxx, miny, maxy, alpha=.2, pts=100, cmap = cm.jet, vm
         # plot
         ax = plt.gca()
         fs = jax.vmap(f,0)(xs)
-        if vmin is None or vmax is None:
-            norm = mpl.colors.Normalize()
-            norm.autoscale(fs)
+        vector = len(fs.shape) > 1
+        if not vector:
+            if vmin is None or vmax is None:
+                norm = mpl.colors.Normalize()
+                norm.autoscale(fs)
+            else:
+                norm = mpl.colors.Normalize(vmin=vmin if vmin is not None else np.min(fs),vmax=vmax if vmax is not None else np.max(fs))
+            colors = cmap(norm(fs)).reshape(phi.shape+(4,))
+            surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, facecolors = colors, linewidth=0., antialiased=True, alpha=alpha, edgecolor=(0,0,0,0), shade=False)
+            m = cm.ScalarMappable(cmap=surf.cmap,norm=norm)
+            m.set_array(colors)
+            if colorbar:
+                plt.colorbar(m, ax=ax, shrink=0.7)
         else:
-            norm = mpl.colors.Normalize(vmin=vmin if vmin is not None else np.min(fs),vmax=vmax if vmax is not None else np.max(fs))
-        colors = cmap(norm(fs)).reshape(phi.shape+(4,))
-        surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, facecolors = colors, linewidth=0., antialiased=True, alpha=alpha, edgecolor=(0,0,0,0), shade=False)
-        m = cm.ScalarMappable(cmap=surf.cmap,norm=norm)
-        m.set_array(colors)
-        if colorbar:
-            plt.colorbar(m, ax=ax, shrink=0.7)
+            M.plot()
+            for i in range(fs.shape[0]):
+                M.plotx(xs[i],v=fs[i])
 
 def plot_sphere_f(M, f, alpha=.2, pts=100, cmap = cm.jet, vmin=None, vmax=None, colorbar=True, border = 1e-2):
     return plot_f(M, f, M.F_spherical, 0., 2.*np.pi, np.pi/2-border, -np.pi/2+border, alpha=alpha, pts=pts, cmap = cmap, vmin=vmin, vmax=vmax, colorbar=colorbar)
