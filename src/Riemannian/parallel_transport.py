@@ -30,17 +30,18 @@ def initialize(M):
         prevx = xv[0]
         v = xv[1]
 
-        dx = jnp.where(jnp.sum(jnp.square(chart-prevchart)) <= 1e-5,
-                dx,
-                M.update_vector((x,chart),prevx,prevchart,dx)
-            )
+        if M.do_chart_update is not None:
+            dx = jnp.where(jnp.sum(jnp.square(chart-prevchart)) <= 1e-5,
+                    dx,
+                    M.update_vector((x,chart),prevx,prevchart,dx)
+                )
         dv = -jnp.einsum('ikl,k,l->i',M.Gamma_g((x,chart)),dx,v)
         return jnp.stack((jnp.zeros_like(x),dv))
     
     def chart_update_parallel_transport(xv,prevchart,y):
         x,chart,dx = y
         if M.do_chart_update is None:
-            return (t,xv,chart)
+            return (xv,chart)
 
         prevx = xv[0]
         v = xv[1]

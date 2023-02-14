@@ -54,7 +54,7 @@ class Euclidean(Manifold):
         if self.dim == 2:
             plt.axis('equal')
     
-    def plot_path(self, xs, u=None, color='b', color_intensity=1., linewidth=1., prevx=None, last=True, markersize=None, arrowcolor='k'):
+    def plot_path(self, xs, u=None, color='b', color_intensity=1., linewidth=1., prevx=None, last=True, s=20, arrowcolor='k'):
         xs = list(xs)
         N = len(xs)
         prevx = None
@@ -63,12 +63,13 @@ class Euclidean(Manifold):
                        color=color,
                        color_intensity=color_intensity if i==0 or i==N-1 else .7,
                        linewidth=linewidth,
+                       s=s,
                        prevx=prevx,
                        last=i==N-1)
             prevx = x
         return
 
-    def plotx(self, x, u=None, color='b', color_intensity=1., linewidth=1., prevx=None, last=True, markersize=None, arrowcolor='k'):
+    def plotx(self, x, u=None, color='b', color_intensity=1., linewidth=1., prevx=None, last=True, s=20, arrowcolor='k'):
         assert(type(x) == type(()) or x.shape[0] == self.dim)
         if type(x) == type(()):
             x = x[0]
@@ -79,9 +80,9 @@ class Euclidean(Manifold):
 
         if last:
             if self.dim == 2:
-                plt.scatter(x[0],x[1],color=color,s=markersize)
+                plt.scatter(x[0],x[1],color=color,s=s)
             elif self.dim == 3:
-                ax.scatter(x[0],x[1],x[2],color=color,s=markersize if markersize else 50)
+                ax.scatter(x[0],x[1],x[2],color=color,s=s)
         else:
             try:
                 xx = np.stack((prevx,x))
@@ -91,9 +92,9 @@ class Euclidean(Manifold):
                     ax.plot(xx[:,0],xx[:,1],xx[:,2],linewidth=linewidth,color=color)
             except:
                 if self.dim == 2:
-                    plt.scatter(x[0],x[1],color=color,s=markersize)
+                    plt.scatter(x[0],x[1],color=color,s=s)
                 elif self.dim == 3:
-                    ax.scatter(x[0],x[1],x[2],color=color,s=markersize if markersize else 50)
+                    ax.scatter(x[0],x[1],x[2],color=color,s=s)
 
         try:
             plt.quiver(x[0], x[1], u[0], u[1], pivot='tail', linewidth=linewidth, scale=5, color=arrowcolor)
