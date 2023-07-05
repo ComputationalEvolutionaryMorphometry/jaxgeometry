@@ -41,6 +41,7 @@ class Heisenberg(Manifold):
 
         ##### (orthonormal) distribution
         self.D = lambda x: jnp.array([[1,0,-x[0][1]/2],[0,1,x[0][0]/2]]).T
+        #self.D = lambda x: jnp.array([[1,0,0],[0,1,0],[0,0,1]]).T
 
     def __str__(self):
         return "Heisenberg group"
@@ -58,7 +59,6 @@ class Heisenberg(Manifold):
         N = len(xs)
         prevx = None
         for i,x in enumerate(xs):
-            xx = x[0] if type(x) is tuple else x
             self.plotx(x, v=vs[i] if vs is not None else None,
                        v_steps=v_steps,i=i,
                        color=color,
@@ -73,10 +73,13 @@ class Heisenberg(Manifold):
     # plot x in coordinates
     def plotx(self, x, u=None, v=None, v_steps=None, i=0, color='b',               
               color_intensity=1., linewidth=1., s=15., prevx=None, prevchart=None, last=True):
-        assert(type(x) == type(()))
+        if (type(x) != type(())):
+            x = (x,)
+        if (prevx is not None and type(prevx) != type(())):
+            prevx = (prevx,)
     
         if v is not None and v_steps is None:
-            v_steps = np.arange(0,n_steps)        
+            v_steps = np.arange(0,n_steps,10)        
     
         ax = plt.gca()
         if prevx is None or last:
@@ -95,6 +98,29 @@ class Heisenberg(Manifold):
             if i in v_steps:
                 ax.quiver(x[0][0], x[0][1], x[0][2], v[0], v[1], v[2],
                           pivot='tail',
-                          arrow_length_ratio = 0.15, linewidths=linewidth, length=0.5,
+                          arrow_length_ratio = 0.15, linewidths=linewidth, length=1.0,
                         color='black')
 
+# funtion to evaluate spherical harmonics
+def Y(l,m,theta,phi):
+    if l == 0 and m == 0:
+        return 1/np.sqrt(4*np.pi)
+    elif l == 1 and m == -1:
+        return np.sqrt(3/(4*np.pi))*np.sin(theta)*np.exp(1j*phi)
+    elif l == 1 and m == 0:
+        return np.sqrt(3/(4*np.pi))*np.cos(theta)
+    elif l == 1 and m == 1:
+        return np.sqrt(3/(4*np.pi))*np.sin(theta)*np.exp(-1j*phi)
+    elif l == 2 and m == -2:
+        return np.sqrt(15/(16*np.pi))*np.sin(theta)**2*np.exp(2j*phi)
+    elif l == 2 and m == -1:
+        return np.sqrt(15/(8*np.pi))*np.sin(theta)*np.cos(theta)*np.exp(1j*phi)
+    elif l == 2 and m == 0:
+        return np.sqrt(5/(16*np.pi))*(3*np.cos(theta)**2-1)
+    elif l == 2 and m == 1:
+        return np.sqrt(15/(8*np.pi))*np.sin(theta)*np.cos(theta)*np.exp(-1j*phi)
+    elif l == 2 and m == 2:
+        return np.sqrt(15/(16*np.pi))*np.sin(theta)**2*np.exp(-2j*phi)
+    else:
+        return 0
+    

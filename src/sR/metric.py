@@ -31,6 +31,12 @@ def initialize(M,truncate_high_order_derivatives=False):
         M.a = lambda x: jnp.dot(M.D(x),M.D(x).T)
     else:
         raise ValueError('no metric or cometric defined on manifold')
+    
+    ### trivial embedding
+    M.F = lambda x: x[0]
+    M.invF = lambda x: (x,M.chart())
+    M.JF = jacfwdx(M.F)
+    M.invJF = jacfwdx(M.invF)
 
     ##### sharp map:
     M.sharp = lambda x,p: jnp.tensordot(M.a(x),p,(1,0))
@@ -38,3 +44,5 @@ def initialize(M,truncate_high_order_derivatives=False):
     ##### Hamiltonian
     M.H = lambda x,p: .5*jnp.sum(jnp.dot(p,M.sharp(x,p))**2)
 
+    ##### divergence in divergence free othornormal distribution
+    M.div = lambda x,X: jnp.einsum('ij,ji->',jacfwdx(X)(x)[:M.sR_dim,:],M.D(x))

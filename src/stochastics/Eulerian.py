@@ -72,5 +72,5 @@ def initialize(M,k=None):
                             chart),
                 *cy)
 
-    M.Eulerian_qp = lambda q,p,sigmas_x,sigmas_a,dts,dWs: integrate_sde(sde_Eulerian,integrator_ito,chart_update_Eulerian,jnp.stack((q[0],p)),q[1],dts,dWs,sigmas_x,sigmas_a)
+    M.Eulerian_qp = lambda q,p,sigmas_x,sigmas_a,dts,dWs: integrate_sde(sde_Eulerian,integrator_stratonovich,chart_update_Eulerian,jnp.stack((q[0],p)),q[1],dts,dWs,sigmas_x,sigmas_a)
     M.Eulerian = lambda q,p,sigmas_x,sigmas_a,dts,dWs: M.Eulerian_qp(q,p,sigmas_x,sigmas_a,dts,dWs)[0:3]

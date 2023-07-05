@@ -25,14 +25,14 @@ def initialize(M):
     """ sub-Riemannian Brownian motion """
 
     def sde_Brownian_sR(c,y):
-        t,x,chart = c
+        t,x,chart,s = c
         dt,dW = y
 
-        D = M.D((x,chart))
+        D = s*M.D((x,chart))
         # D0 = \sum_{i=1}^m div_\mu(X_i) X_i) - not implemented yet
         det = jnp.zeros_like(x) # Y^k(x)=X_0^k(x)+(1/2)\sum_{i=1}^m \langle \nabla X_i^k(x),X_i(x)\rangle
         sto = jnp.tensordot(D,dW,(1,0))
-        return (det,sto,D)
+        return (det,sto,D,0.)
     
     def chart_update_Brownian_sR(x,chart,*ys):
         if M.do_chart_update is None:
@@ -51,4 +51,4 @@ def initialize(M):
     
     M.sde_Brownian_sR = sde_Brownian_sR
     M.chart_update_Brownian_sR = chart_update_Brownian_sR
-    M.Brownian_sR = jit(lambda x,dts,dWs: integrate_sde(sde_Brownian_sR,integrator_ito,chart_update_Brownian_sR,x[0],x[1],dts,dWs))
+    M.Brownian_sR = jit(lambda x,dts,dWs,stdCov=1.: integrate_sde(sde_Brownian_sR,integrator_ito,chart_update_Brownian_sR,x[0],x[1],dts,dWs,stdCov)[0:3])
