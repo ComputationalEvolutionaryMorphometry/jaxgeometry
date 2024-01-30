@@ -29,8 +29,6 @@ class landmarks(Manifold):
 
     def get_B(self,q):
         """ dual space basis for Laplacian kernel etc. """
-        assert(not self.std_basis)
-
         PT = jnp.vstack((jnp.ones(self.N),q[0].reshape((self.N,self.m)).T))
         #codim = self.m*(self.N-PT.shape[0])
         #svd = jax.scipy.linalg.svd(PT)
@@ -38,6 +36,14 @@ class landmarks(Manifold):
         V = jax.lax.linalg.eigh(PT.T@PT)[0]
 
         return jnp.kron(V,jnp.eye(self.m))
+    
+    def Bkernel(self,q):
+        """ dual space basis for Laplacian kernel etc., kernel """
+        return self.get_B(q)[:,:self.dim-self.codim]
+        
+    def Bpoly(self,q):
+        """ dual space basis for Laplacian kernel etc., subspace of polynomials """     
+        return self.get_B(q)[:,self.dim-self.codim:]
 
     def __init__(self,N=1,m=2,k_alpha=1.,k_sigma=None,kernel='Gaussian',order=2):
         Manifold.__init__(self)
@@ -56,7 +62,7 @@ class landmarks(Manifold):
 
         self.k_alpha = k_alpha
         if k_sigma == None:
-            self.k_sigma = .5*jnp.eye(self.m)
+            self.k_sigma = jnp.eye(self.m)
         else:
             self.k_sigma = jnp.array(k_sigma) # standard deviation of the kernel
         self.inv_k_sigma = jnp.linalg.inv(self.k_sigma)
@@ -97,15 +103,18 @@ class landmarks(Manifold):
                     return self.k_alpha*(r**(2*self.order-self.m))
         else:
             raise Exception('unknown kernel specified')
-        self.k = k
-        dk = lambda x: gradx(k)
-        self.dk = dk
-        d2k = lambda x: hessian(k)
-        self.d2k = d2k
+        # kernel differentials
+        self.dk = jax.grad(M.k)
+        self.d2k = jax.hessian(M.k)
 
         # in coordinates
         self.k_q = lambda q1,q2: self.k(q1.reshape((-1,self.m))[:,np.newaxis,:]-q2.reshape((-1,self.m))[np.newaxis,:,:])
         self.K = lambda q1,q2: (self.k_q(q1,q2)[:,:,np.newaxis,np.newaxis]*jnp.eye(self.m)[np.newaxis,np.newaxis,:,:]).transpose((0,2,1,3)).reshape((q1.size,q2.size))
+        # differentials
+        self.dk_q = lambda q1,q2: jax.vmap(jax.vmap(lambda x1,x2: self.dk(x1-x2),(0,None)),(None,0))(q1.reshape((-1,self.m)),q2.reshape((-1,self.m)))
+        self.dk_q(q[0],q[0]).shape
+        self.d2k_q = lambda q1,q2: jax.vmap(jax.vmap(lambda x1,x2: self.d2k(x1-x2),(0,None)),(None,0))(q1.reshape((-1,self.m)),q2.reshape((-1,self.m)))
+        self.d2k_q(q[0],q[0]).shape
 
         ##### Metric:
         def gsharp(q):
@@ -117,7 +126,7 @@ class landmarks(Manifold):
                 Bpoly = B[:,self.dim-self.codim:]
                 gsharpB = jnp.einsum('ji,jk,kl->il',Bkernel,self.K(q[0],q[0]),Bkernel)
                 gsharpextB = jax.scipy.linalg.block_diag((gsharpB),jnp.eye(self.codim))
-                return jnp.einsum('ij,jk,kl->il',B,gsharpextB,jnp.linalg.inv(B))
+                return jnp.einsum('ij,jk,lk->il',B,gsharpextB,B)
 
         self.gsharp = gsharp
 
@@ -152,7 +161,7 @@ class landmarks(Manifold):
         self.k_Sigma = jnp.tensordot(self.k_sigma,self.k_sigma,(1,1))
 
     def __str__(self):
-        return "%d landmarks in R^%d (dim %d). kernel %s, k_alpha=%d, k_sigma=%s, standard_basis=%s, cfg kernel codim=%d" % (self.N,self.m,self.dim,self.kernel,self.k_alpha,self.k_sigma,self.std_basis,self.codim)
+        return "%d landmarks in R^%d (dim %d). kernel %s, k_alpha=%d, k_sigma=%s, standard_basis=%s, cfg kernel codim=%d, order (if Sobolev)=%d" % (self.N,self.m,self.dim,self.kernel,self.k_alpha,self.k_sigma,self.std_basis,self.codim,self.order)
 
     def newfig(self):
         if self.m == 2:

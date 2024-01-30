@@ -168,6 +168,12 @@ def cross(a, b):
         a[2]*b[0] - a[0]*b[2],
         a[0]*b[1] - a[1]*b[0]])
 
+def mmT(A,C=None):
+    return A@A.T if C is None else A@C@A.T
+        
+def mTm(A,C=None):
+    return A.T@A if C is None else A.T@C@A
+
 #import numpy as np
 #def python_scan(f, init, xs, length=None):
 #  if xs is None:
