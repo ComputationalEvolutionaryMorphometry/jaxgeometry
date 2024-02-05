@@ -113,12 +113,12 @@ class Ellipsoid(EmbeddedManifold):
     def plot(self,rotate=None,alpha=None,lw=0.3,color='gray',scale=1.):
         ax = plt.gca()
         x = np.arange(-10,10,1)
-        ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
-        ax.w_yaxis.set_major_locator(ticker.FixedLocator(x))
-        ax.w_zaxis.set_major_locator(ticker.FixedLocator(x))
-        ax.w_xaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
-        ax.w_yaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
-        ax.w_zaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
+        #ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
+        #ax.w_yaxis.set_major_locator(ticker.FixedLocator(x))
+        #ax.w_zaxis.set_major_locator(ticker.FixedLocator(x))
+        #ax.w_xaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
+        #ax.w_yaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
+        #ax.w_zaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
         ax.xaxis._axinfo["grid"]['linewidth'] = lw
         ax.yaxis._axinfo["grid"]['linewidth'] = lw
         ax.zaxis._axinfo["grid"]['linewidth'] = lw
@@ -148,12 +148,12 @@ class Ellipsoid(EmbeddedManifold):
     def plot_field(self, field,lw=.3, scale=1.):
         ax = plt.gca()
         x = np.arange(-10,10,1)
-        ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
-        ax.w_yaxis.set_major_locator(ticker.FixedLocator(x))
-        ax.w_zaxis.set_major_locator(ticker.FixedLocator(x))
-        ax.w_xaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
-        ax.w_yaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
-        ax.w_zaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
+        #ax.w_xaxis.set_major_locator(ticker.FixedLocator(x))
+        #ax.w_yaxis.set_major_locator(ticker.FixedLocator(x))
+        #ax.w_zaxis.set_major_locator(ticker.FixedLocator(x))
+        #ax.w_xaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
+        #ax.w_yaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
+        #ax.w_zaxis.set_pane_color((0.98, 0.98, 0.99, 1.0))
         ax.xaxis._axinfo["grid"]['linewidth'] = lw
         ax.yaxis._axinfo["grid"]['linewidth'] = lw
         ax.zaxis._axinfo["grid"]['linewidth'] = lw

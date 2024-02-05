@@ -21,16 +21,21 @@
 from src.setup import *
 from src.utils import *
 
-def initialize(M,truncate_high_order_derivatives=False):
-    """ add SR structure to manifold """
+def initialize(M):
+    """ add sR structure to manifold """
     """ currently assumes distribution and that ambient Riemannian manifold is Euclidean """
 
     d = M.dim
 
-    if hasattr(M, 'D'):
-        M.a = lambda x: jnp.dot(M.D(x),M.D(x).T)
+    if not hasattr(M, 'D'):
+        raise ValueError('no distribution defined on manifold')
+        
+    M.sR_dim = M.D(M.coords(jnp.zeros(M.dim))).shape[1]
+    
+    if not hasattr(M,'a'):
+        M.a = lambda x: mmT(M.D(x))
     else:
-        raise ValueError('no metric or cometric defined on manifold')
+        print('using existing M.a')
     
     ### trivial embedding
     M.F = lambda x: x[0]
@@ -42,7 +47,10 @@ def initialize(M,truncate_high_order_derivatives=False):
     M.sharp = lambda x,p: jnp.tensordot(M.a(x),p,(1,0))
 
     ##### Hamiltonian
-    M.H = lambda x,p: .5*jnp.sum(jnp.dot(p,M.sharp(x,p))**2)
+    if not hasattr(M,'H'):
+        M.H = lambda x,p: 5*jnp.sum(jnp.einsum('i,ij->j',p,M.D(x))**2)
+    else:
+        print('using existing M.H')
 
     ##### divergence in divergence free othornormal distribution
     M.div = lambda x,X: jnp.einsum('ij,ji->',jacfwdx(X)(x)[:M.sR_dim,:],M.D(x))

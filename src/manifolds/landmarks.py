@@ -103,18 +103,17 @@ class landmarks(Manifold):
                     return self.k_alpha*(r**(2*self.order-self.m))
         else:
             raise Exception('unknown kernel specified')
+        self.k = k
         # kernel differentials
-        self.dk = jax.grad(M.k)
-        self.d2k = jax.hessian(M.k)
+        self.dk = jax.grad(self.k)
+        self.d2k = jax.hessian(self.k)
 
         # in coordinates
         self.k_q = lambda q1,q2: self.k(q1.reshape((-1,self.m))[:,np.newaxis,:]-q2.reshape((-1,self.m))[np.newaxis,:,:])
         self.K = lambda q1,q2: (self.k_q(q1,q2)[:,:,np.newaxis,np.newaxis]*jnp.eye(self.m)[np.newaxis,np.newaxis,:,:]).transpose((0,2,1,3)).reshape((q1.size,q2.size))
         # differentials
         self.dk_q = lambda q1,q2: jax.vmap(jax.vmap(lambda x1,x2: self.dk(x1-x2),(0,None)),(None,0))(q1.reshape((-1,self.m)),q2.reshape((-1,self.m)))
-        self.dk_q(q[0],q[0]).shape
         self.d2k_q = lambda q1,q2: jax.vmap(jax.vmap(lambda x1,x2: self.d2k(x1-x2),(0,None)),(None,0))(q1.reshape((-1,self.m)),q2.reshape((-1,self.m)))
-        self.d2k_q(q[0],q[0]).shape
 
         ##### Metric:
         def gsharp(q):
