@@ -6,6 +6,8 @@ The code in this repository is based on the papers *Differential geometry and st
 
 The code is a reimplementation of the Theano Geometry library https://bitbucket.org/stefansommer/jaxgeometry/ replacing Theano with Jax https://github.com/google/jax.
 
+The source repository is at https://bitbucket.org/stefansommer/jaxgeometry/
+
 ### Who do I talk to? ###
 
 Please contact Stefan Sommer *sommer@di.ku.dk*
@@ -15,15 +17,21 @@ Please contact Stefan Sommer *sommer@di.ku.dk*
 Please use Python 3.X.
 
 #### pip:
-Install jax, jaxlib, jupyter, matplotlib, sklearn:
+Install with
 ```
-pip install jax jaxlib jupyter matplotlib sklearn
+pip install jaxdifferentialgeometry
+```
+
+#### from the repository:
+Check out the source with git sandiInstall required packages:
+```
+pip install -r requirements.txt
 ```
 Use e.g. a Python 3 virtualenv:
 ```
 virtualenv -p python3 .
 source bin/activate
-pip install jax jaxlib jupyter matplotlib sklearn
+pip install -r requirements.txt
 ```
 If you don't use a virtual environment, make sure that you are actually using Python 3, e.g. use pip3 instead of pip.
 
@@ -32,13 +40,14 @@ Alternatively, use conda:
 conda install -c conda-forge jaxlib
 conda install -c conda-forge jax
 ```
+and similarly for the remaining requirements in requirements.txt.
 
-Start jupyter notebook 
+### Viewing the example notebooks
+After cloning the source repository, start jupyter notebook 
 ```
-jupyter notebook
+PYTHONPATH='src' jupyter notebook
 ```
-
-Your browser should now open with a list of the Jax Geometry notebooks in the main folder.
+Your browser should now open and you can find the example Jax Geometry notebooks in the main folder.
 
 ### Why Jax? ###
 Some good discussions about the architectural differences between autodiff frameworks: https://www.assemblyai.com/blog/why-you-should-or-shouldnt-be-using-jax-in-2022/ and http://www.stochasticlifestyle.com/engineering-trade-offs-in-automatic-differentiation-from-tensorflow-and-pytorch-to-jax-and-julia/

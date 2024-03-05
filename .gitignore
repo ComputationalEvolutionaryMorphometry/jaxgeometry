@@ -5,6 +5,8 @@ __pycache__
 *.pyc
 old/
 pyvenv.cfg
+*.egg-info/
+dist/
 
 bin/
 include/
