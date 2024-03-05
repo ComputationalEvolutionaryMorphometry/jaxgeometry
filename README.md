@@ -15,19 +15,19 @@ Please contact Stefan Sommer *sommer@di.ku.dk*
 Please use Python 3.X.
 
 #### pip:
-Install jax, jaxlib, jupyter, matplotlib, multiprocess, sklearn:
+Install jax, jaxlib, jupyter, matplotlib, sklearn:
 ```
-pip install jax jaxlib jupyter matplotlib multiprocess sklearn
+pip install jax jaxlib jupyter matplotlib sklearn
 ```
 Use e.g. a Python 3 virtualenv:
 ```
 virtualenv -p python3 .
 source bin/activate
-pip install jax jaxlib jupyter matplotlib multiprocess sklearn
+pip install jax jaxlib jupyter matplotlib sklearn
 ```
 If you don't use a virtual environment, make sure that you are actually using Python 3, e.g. use pip3 instead of pip.
 
-Alternatively, use conda. This may work better for example on Apple M1:
+Alternatively, use conda:
 ```
 conda install -c conda-forge jaxlib
 conda install -c conda-forge jax

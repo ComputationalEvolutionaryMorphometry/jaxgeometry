@@ -14,9 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
+# along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
-
 
 from src.setup import *
 from src.utils import *

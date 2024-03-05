@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Theano Geometry. If not, see <http://www.gnu.org/licenses/>.
+# along with Jax Geometry. If not, see <http://www.gnu.org/licenses/>.
 #
 
 
@@ -38,9 +38,6 @@ from src.utils import *
 import time
 
 from src.params import *
-
-from multiprocess import Pool
-import src.multiprocess_utils as mpu
 
 import itertools
 from functools import partial
