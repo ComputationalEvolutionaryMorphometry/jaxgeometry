@@ -24,3 +24,4 @@ contributed
 
 # temporary files
 .tmp/
+.DS_store
