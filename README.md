@@ -45,9 +45,9 @@ and similarly for the remaining requirements in requirements.txt.
 ### Viewing the example notebooks
 After cloning the source repository, start jupyter notebook 
 ```
-PYTHONPATH='src' jupyter notebook
+PYTHONPATH=$(pwd)/src jupyter notebook
 ```
-Your browser should now open and you can find the example Jax Geometry notebooks in the main folder.
+Your browser should now open and you can find the example Jax Geometry notebooks in the examples folder.
 
 ### Why Jax? ###
 Some good discussions about the architectural differences between autodiff frameworks: https://www.assemblyai.com/blog/why-you-should-or-shouldnt-be-using-jax-in-2022/ and http://www.stochasticlifestyle.com/engineering-trade-offs-in-automatic-differentiation-from-tensorflow-and-pytorch-to-jax-and-julia/
