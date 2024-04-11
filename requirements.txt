@@ -3,3 +3,4 @@ jaxlib
 matplotlib
 jupyter
 scikit-learn
+flax
