@@ -4,4 +4,4 @@
 pip install pytest nbmake
 
 # run tests
-PYTHONPATH=$(pwd)/src pytest --nbmake --nbmake-timeout=12000 examples/*.ipynb papers/*.ipynb
+PYTHONPATH=$(pwd) pytest --nbmake --nbmake-timeout=12000 examples/*.ipynb papers/*.ipynb

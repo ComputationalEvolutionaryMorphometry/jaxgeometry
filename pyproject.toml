@@ -15,12 +15,25 @@ classifiers = [
 dependencies = [
     "jax",
     "jaxlib",
-    "jupyter",
-    "matplotlib",
     "scikit-learn",
 ]
 
-[project.urls]
-Homepage = "https://bitbucket.org/stefansommer/jaxgeometry/"
-Issues = "https://bitbucket.org/stefansommer/jaxgeometry/issues"
+[project.optional-dependencies]
+examples = [
+    "jupyter",
+    "matplotlib",
+]
 
+[project.urls]
+Homepage = "https://github.com/computationalevolutionarymorphometry/jaxgeometry/"
+Issues = "https://github.com/computationalevolutionarymorphometry/jaxgeometry/issues"
+
+[build-system]
+requires = [
+    "setuptools>=60",
+    "setuptools-scm>=8.0",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_file = "jaxgeometry/_version.py"
