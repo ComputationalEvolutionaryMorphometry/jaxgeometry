@@ -45,6 +45,14 @@ class landmarks(Manifold):
         """ dual space basis for Laplacian kernel etc., subspace of polynomials """     
         return self.get_B(q)[:,self.dim-self.codim:]
 
+    def xi(self):
+        """ Evaluation points for Lagrange basis """
+        return jnp.hstack((jnp.eye(self.m),jnp.zeros((self.m,1)))).T
+    
+    def Lagrange(self,q):
+        """ Lagrange basis of interpolating polynomials at points xi_1,...,x_{m+1} """
+        return jnp.squeeze(jnp.hstack((q.reshape((-1,self.m)),1-jnp.sum(q.reshape((-1,self.m)),axis=1)[:,None])))
+
     def __init__(self,N=1,m=2,k_alpha=1.,k_sigma=None,kernel='Gaussian',order=2):
         Manifold.__init__(self)
 
@@ -111,6 +119,12 @@ class landmarks(Manifold):
         # in coordinates
         self.k_q = lambda q1,q2: self.k(q1.reshape((-1,self.m))[:,np.newaxis,:]-q2.reshape((-1,self.m))[np.newaxis,:,:])
         self.K = lambda q1,q2: (self.k_q(q1,q2)[:,:,np.newaxis,np.newaxis]*jnp.eye(self.m)[np.newaxis,np.newaxis,:,:]).transpose((0,2,1,3)).reshape((q1.size,q2.size))
+        if self.kernel == 'laplacian':
+            def g(q1,q2):
+                kxi = self.k_q(q1.reshape((-1,self.m)),self.xi())
+                return self.k_q(q1,q2)-jnp.dot(kxi.T,self.Lagrange(q2.reshape((-1,self.m))).T)
+            self.g = g
+            self.G = lambda q1,q2: (self.g(q1,q2)[:,:,np.newaxis,np.newaxis]*jnp.eye(self.m)[np.newaxis,np.newaxis,:,:]).transpose((0,2,1,3)).reshape((q1.size,q2.size))
         # differentials
         self.dk_q = lambda q1,q2: jax.vmap(jax.vmap(lambda x1,x2: self.dk(x1-x2),(0,None)),(None,0))(q1.reshape((-1,self.m)),q2.reshape((-1,self.m)))
         self.d2k_q = lambda q1,q2: jax.vmap(jax.vmap(lambda x1,x2: self.d2k(x1-x2),(0,None)),(None,0))(q1.reshape((-1,self.m)),q2.reshape((-1,self.m)))

@@ -20,7 +20,7 @@
 from jaxgeometry.setup import *
 from jaxgeometry.utils import *
 
-def initialize(M,f=None,method='BFGS'):
+def initialize(M,f=None,lossf=None,method='BFGS'):
     """ numerical Riemannian Logarithm map """
 
     if f is None:
@@ -29,7 +29,10 @@ def initialize(M,f=None,method='BFGS'):
     def loss(x,v,y):
         (x1,chart1) = f(x,v)
         y_chart1 = M.update_coords(y,chart1)
-        return 1./M.dim*jnp.sum(jnp.square(x1 - y_chart1[0]))
+        if lossf is None:
+            return 1./M.dim*jnp.sum(jnp.square(x1 - y_chart1[0]))
+        else:
+            return lossf(x1,y_chart1[0])
     dloss = jax.grad(loss,1)
     #from scipy.optimize import approx_fprime
     #dloss = lambda x,v,y: approx_fprime(v,lambda v: loss(x,v,y),1e-4)
